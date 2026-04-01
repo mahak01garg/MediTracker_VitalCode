@@ -71,6 +71,7 @@ class ReminderScheduler {
 
     async sendReminder(dose) {
         const user = dose.userId;
+        if (!user) return;
         const prefs = user.notificationPreferences || {};
 
         const reminderData = {
@@ -97,6 +98,7 @@ class ReminderScheduler {
 
     async sendMissedDoseAlert(dose) {
         const user = dose.userId;
+        if (!user) return;
 
         const alertData = {
             userName: user.name,

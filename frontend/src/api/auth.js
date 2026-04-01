@@ -26,7 +26,10 @@ export const authAPI = {
     },
     
     updateProfile: async (userData) => {
-        const response = await api.put('/auth/profile', userData);
+        const config = userData instanceof FormData
+            ? { headers: { 'Content-Type': 'multipart/form-data' } }
+            : undefined;
+        const response = await api.put('/auth/profile', userData, config);
         return response.data;
     }
 };

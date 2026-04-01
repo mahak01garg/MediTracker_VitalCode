@@ -1,859 +1,12 @@
-// import React, { useState, useEffect } from 'react';
-// import { useAuth } from '../context/AuthContext';
-// import { useMedications } from '../context/MedicationContext';
-// import Input from '../components/common/Input';
-// import Button from '../components/common/Button';
-// import Card from '../components/common/Card';
-// import { Link, useNavigate, useLocation } from 'react-router-dom';
-// import { 
-//     FiUser, 
-//     FiMail, 
-//     FiPhone, 
-//     FiCalendar,
-//     FiMapPin,
-//     FiEdit2,
-//     FiSave,
-//     FiLock,
-//     FiShield,
-//     FiBell,
-//     FiActivity
-// } from 'react-icons/fi';
-
-// const Profile = () => {
-//     const { user, updateProfile } = useAuth();
-//     const { medications, getMedicationStats } = useMedications();
-
-//     const [isEditing, setIsEditing] = useState(false);
-//     const [formData, setFormData] = useState({
-//         name: '',
-//         email: '',
-//         phone: '',
-//         birthDate: '',
-//         address: '',
-//         emergencyContact: ''
-//     });
-//     const [loading, setLoading] = useState(false);
-//     const [error, setError] = useState('');
-//     const [success, setSuccess] = useState('');
-//     const navigate=useNavigate();
-
-//     useEffect(() => {
-//         if (user) {
-//             setFormData({
-//                 name: user.name || '',
-//                 email: user.email || '',
-//                 phone: user.phone || '',
-//                 birthDate: user.birthDate || '',
-//                 address: user.address || '',
-//                 emergencyContact: user.emergencyContact || ''
-//             });
-//         }
-//     }, [user]);
-
-//     const handleInputChange = (e) => {
-//         const { name, value } = e.target;
-//         setFormData(prev => ({ ...prev, [name]: value }));
-//     };
-
-//     const handleSubmit = async (e) => {
-//         e.preventDefault();
-//         setLoading(true);
-//         setError('');
-//         setSuccess('');
-
-//         try {
-//             const result = await updateProfile(formData);
-//             if (result.success) {
-//                 setSuccess('Profile updated successfully!');
-//                 setIsEditing(false);
-//             } else {
-//                 setError(result.error || 'Failed to update profile');
-//             }
-//         } catch {
-//             setError('An error occurred. Please try again.');
-//         } finally {
-//             setLoading(false);
-//         }
-//     };
-
-//     /* ================== DYNAMIC STATS ================== */
-//     const stats = getMedicationStats();
-
-//     const adherenceRate = medications.length
-//         ? Math.round((stats.active / medications.length) * 100)
-//         : 0;
-
-//     const userStats = [
-//         {
-//             label: 'Medication Streak',
-//             value: `${stats.today} days`,
-//             icon: FiActivity
-//         },
-//         {
-//             label: 'Adherence Rate',
-//             value: `${adherenceRate}%`,
-//             icon: FiBell
-//         },
-//         {
-//             label: 'Active Medications',
-//             value: stats.active,
-//             icon: FiShield
-//         },
-//         {
-//             label: 'Total Medications',
-//             value: stats.total,
-//             icon: FiActivity
-//         }
-//     ];
-//     /* =================================================== */
-
-//     if (!user) {
-//         return (
-//             <div className="flex justify-center items-center h-64">
-//                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-//             </div>
-//         );
-//     }
-
-//     return (
-//         <div className="space-y-6">
-//             {/* Header */}
-//             <div className="flex justify-between items-center">
-//                 <div>
-//                     <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
-//                     <p className="text-gray-600 mt-2">Manage your account and preferences</p>
-//                 </div>
-
-//                 {!isEditing && (
-//                     <Button onClick={() => setIsEditing(true)} variant="primary">
-//                         <FiEdit2 className="w-5 h-5 mr-2" />
-//                         Edit Profile
-//                     </Button>
-//                 )}
-//             </div>
-
-//             {/* Stats Cards */}
-//             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-//                 {userStats.map((stat, index) => {
-//                     const Icon = stat.icon;
-//                     return (
-//                         <Card key={index}>
-//                             <div className="flex items-center">
-//                                 <div className="bg-blue-100 p-3 rounded-lg mr-4">
-//                                     <Icon className="w-6 h-6 text-blue-600" />
-//                                 </div>
-//                                 <div>
-//                                     <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-//                                     <p className="text-sm text-gray-600">{stat.label}</p>
-//                                 </div>
-//                             </div>
-//                         </Card>
-//                     );
-//                 })}
-//             </div>
-
-//             {/* Messages */}
-//             {error && (
-//                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-//                     <p className="text-red-700">{error}</p>
-//                 </div>
-//             )}
-
-//             {success && (
-//                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-//                     <p className="text-green-700">{success}</p>
-//                 </div>
-//             )}
-
-//             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-//                 {/* Profile Form */}
-//                 <div className="lg:col-span-2">
-//                     <Card>
-//                         <form onSubmit={handleSubmit} className="space-y-6">
-//                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-//                                 <Input label="Full Name" name="name" value={formData.name}
-//                                     onChange={handleInputChange} disabled={!isEditing} required
-//                                     icon={<FiUser className="w-5 h-5 text-gray-400" />} />
-
-//                                 <Input label="Email Address" name="email" type="email"
-//                                     value={formData.email} onChange={handleInputChange}
-//                                     disabled={!isEditing} required
-//                                     icon={<FiMail className="w-5 h-5 text-gray-400" />} />
-//                             </div>
-
-//                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-//                                 <Input label="Phone Number" name="phone" type="tel"
-//                                     value={formData.phone} onChange={handleInputChange}
-//                                     disabled={!isEditing}
-//                                     icon={<FiPhone className="w-5 h-5 text-gray-400" />} />
-
-//                                 <Input label="Birth Date" name="birthDate" type="date"
-//                                     value={formData.birthDate} onChange={handleInputChange}
-//                                     disabled={!isEditing}
-//                                     icon={<FiCalendar className="w-5 h-5 text-gray-400" />} />
-//                             </div>
-
-//                             <Input label="Address" name="address"
-//                                 value={formData.address} onChange={handleInputChange}
-//                                 disabled={!isEditing}
-//                                 icon={<FiMapPin className="w-5 h-5 text-gray-400" />} />
-
-//                             <Input label="Emergency Contact" name="emergencyContact"
-//                                 value={formData.emergencyContact} onChange={handleInputChange}
-//                                 disabled={!isEditing}
-//                                 helperText="Phone number of emergency contact"
-//                                 icon={<FiPhone className="w-5 h-5 text-gray-400" />} />
-
-//                             {isEditing && (
-//                                 <div className="flex justify-end space-x-4 pt-6 border-t">
-//                                     <Button type="button" variant="outline"
-//                                         onClick={() => setIsEditing(false)} disabled={loading}>
-//                                         Cancel
-//                                     </Button>
-//                                     <Button type="submit" variant="primary" loading={loading}>
-//                                         <FiSave className="w-5 h-5 mr-2" />
-//                                         Save Changes
-//                                     </Button>
-//                                 </div>
-//                             )}
-//                         </form>
-//                     </Card>
-//                 </div>
-
-//                 {/* Sidebar */}
-//                 <div className="space-y-6">
-//                     <Card>
-//                         <h3 className="font-bold text-gray-900 mb-4">Account Status</h3>
-//                         <div className="space-y-3">
-//                            <div className="flex justify-between">
-//     <span className="text-gray-600">Account Created</span>
-//     <span className="font-medium">
-//         {user?.createdAt
-//             ? new Date(user.createdAt).toLocaleDateString()
-//             : 'N/A'}
-//     </span>
-// </div>
-
-//                         </div>
-//                     </Card>
-
-//                     <Card>
-//                         <h3 className="font-bold text-gray-900 mb-4">Quick Actions</h3>
-//                         <Button variant="outline" fullWidth onClick={()=>{
-//                             navigate("/change-password");
-//                         }}>
-//                             <FiLock className="w-4 h-4 mr-2" />
-//                             Change Password
-//                         </Button>
-//                     </Card>
-//                 </div>
-//             </div>
-//         </div>
-//     );
-// };
-
-// export default Profile;
-// import React, { useState, useEffect } from "react";
-// import { useAuth } from "../context/AuthContext";
-// import { useMedications } from "../context/MedicationContext";
-// import Input from "../components/common/Input";
-// import Button from "../components/common/Button";
-// import Card from "../components/common/Card";
-// import { useNavigate } from "react-router-dom";
-// import {
-//   FiUser,
-//   FiMail,
-//   FiPhone,
-//   FiCalendar,
-//   FiMapPin,
-//   FiEdit2,
-//   FiSave,
-//   FiLock,
-//   FiShield,
-//   FiBell,
-//   FiActivity,
-// } from "react-icons/fi";
-
-// const Profile = () => {
-//   const { user, updateProfile } = useAuth();
-//   const { medications, getMedicationStats } = useMedications();
-//   const navigate = useNavigate();
-
-//   const [isEditing, setIsEditing] = useState(false);
-//   const [formData, setFormData] = useState({
-//     name: "",
-//     email: "",
-//     phone: "",
-//     birthDate: "",
-//     address: "",
-//     emergencyContact: "",
-//   });
-//   const [loading, setLoading] = useState(false);
-//   const [error, setError] = useState("");
-//   const [success, setSuccess] = useState("");
-
-//   useEffect(() => {
-//     if (user) {
-//       setFormData({
-//         name: user.name || "",
-//         email: user.email || "",
-//         phone: user.phone || "",
-//         birthDate: user.birthDate || "",
-//         address: user.address || "",
-//         emergencyContact: user.emergencyContact || "",
-//       });
-//     }
-//   }, [user]);
-
-//   const handleInputChange = (e) => {
-//     const { name, value } = e.target;
-//     setFormData((prev) => ({ ...prev, [name]: value }));
-//   };
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     setLoading(true);
-//     setError("");
-//     setSuccess("");
-
-//     try {
-//       const result = await updateProfile(formData);
-//       if (result.success) {
-//         setSuccess("Profile updated successfully!");
-//         setIsEditing(false);
-//       } else {
-//         setError(result.error || "Failed to update profile");
-//       }
-//     } catch {
-//       setError("An error occurred. Please try again.");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   /* ================== DYNAMIC STATS ================== */
-//   const stats = getMedicationStats();
-//   const adherenceRate = medications.length
-//     ? Math.round((stats.active / medications.length) * 100)
-//     : 0;
-
-//   const userStats = [
-//     {
-//       label: "Medication Streak",
-//       value: `${stats.today} days`,
-//       icon: FiActivity,
-//       color: "bg-blue-50 dark:bg-blue-900 text-blue-800 dark:text-blue-100",
-//     },
-//     {
-//       label: "Adherence Rate",
-//       value: `${adherenceRate}%`,
-//       icon: FiBell,
-//       color: "bg-green-50 dark:bg-green-900 text-green-800 dark:text-green-100",
-//     },
-//     {
-//       label: "Active Medications",
-//       value: stats.active,
-//       icon: FiShield,
-//       color: "bg-purple-50 dark:bg-purple-900 text-purple-800 dark:text-purple-100",
-//     },
-//     {
-//       label: "Total Medications",
-//       value: stats.total,
-//       icon: FiActivity,
-//       color: "bg-yellow-50 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-100",
-//     },
-//   ];
-//   /* =================================================== */
-
-//   if (!user) {
-//     return (
-//       <div className="flex justify-center items-center h-64 bg-gray-50 dark:bg-gray-900">
-//         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="space-y-6 p-4 md:p-6 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
-//       {/* Header */}
-//       <div className="flex justify-between items-center flex-wrap">
-//         <div>
-//           <h1 className="text-3xl font-bold">My Profile</h1>
-//           <p className="text-gray-600 dark:text-gray-400 mt-1">
-//             Manage your account and preferences
-//           </p>
-//         </div>
-//         {!isEditing && (
-//           <Button
-//             onClick={() => setIsEditing(true)}
-//             variant="primary"
-//             className="mt-2 md:mt-0"
-//           >
-//             <FiEdit2 className="w-5 h-5 mr-2" />
-//             Edit Profile
-//           </Button>
-//         )}
-//       </div>
-
-//       {/* Stats Cards */}
-//       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-//         {userStats.map((stat, index) => {
-//           const Icon = stat.icon;
-//           return (
-//             <Card key={index} className={`${stat.color}`}>
-//               <div className="flex items-center">
-//                 <div className="p-3 rounded-lg mr-4 bg-opacity-30">
-//                   <Icon className="w-6 h-6" />
-//                 </div>
-//                 <div>
-//                   <p className="text-2xl font-bold">{stat.value}</p>
-//                   <p className="text-sm">{stat.label}</p>
-//                 </div>
-//               </div>
-//             </Card>
-//           );
-//         })}
-//       </div>
-
-//       {/* Messages */}
-//       {error && (
-//         <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg p-4">
-//           <p className="text-red-700 dark:text-red-200">{error}</p>
-//         </div>
-//       )}
-//       {success && (
-//         <div className="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg p-4">
-//           <p className="text-green-700 dark:text-green-200">{success}</p>
-//         </div>
-//       )}
-
-//       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-//         {/* Profile Form */}
-//         <div className="lg:col-span-2">
-//           <Card>
-//             <form onSubmit={handleSubmit} className="space-y-6">
-//               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-//                 <Input
-//                   label="Full Name"
-//                   name="name"
-//                   value={formData.name}
-//                   onChange={handleInputChange}
-//                   disabled={!isEditing}
-//                   required
-//                   icon={<FiUser className="w-5 h-5 text-gray-400 dark:text-gray-300" />}
-//                 />
-//                 <Input
-//                   label="Email Address"
-//                   name="email"
-//                   type="email"
-//                   value={formData.email}
-//                   onChange={handleInputChange}
-//                   disabled={!isEditing}
-//                   required
-//                   icon={<FiMail className="w-5 h-5 text-gray-400 dark:text-gray-300" />}
-//                 />
-//               </div>
-
-//               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-//                 <Input
-//                   label="Phone Number"
-//                   name="phone"
-//                   type="tel"
-//                   value={formData.phone}
-//                   onChange={handleInputChange}
-//                   disabled={!isEditing}
-//                   icon={<FiPhone className="w-5 h-5 text-gray-400 dark:text-gray-300" />}
-//                 />
-//                 <Input
-//                   label="Birth Date"
-//                   name="birthDate"
-//                   type="date"
-//                   value={formData.birthDate}
-//                   onChange={handleInputChange}
-//                   disabled={!isEditing}
-//                   icon={<FiCalendar className="w-5 h-5 text-gray-400 dark:text-gray-300" />}
-//                 />
-//               </div>
-
-//               <Input
-//                 label="Address"
-//                 name="address"
-//                 value={formData.address}
-//                 onChange={handleInputChange}
-//                 disabled={!isEditing}
-//                 icon={<FiMapPin className="w-5 h-5 text-gray-400 dark:text-gray-300" />}
-//               />
-
-//               <Input
-//                 label="Emergency Contact"
-//                 name="emergencyContact"
-//                 value={formData.emergencyContact}
-//                 onChange={handleInputChange}
-//                 disabled={!isEditing}
-//                 helperText="Phone number of emergency contact"
-//                 icon={<FiPhone className="w-5 h-5 text-gray-400 dark:text-gray-300" />}
-//               />
-
-//               {isEditing && (
-//                 <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
-//                   <Button
-//                     type="button"
-//                     variant="outline"
-//                     onClick={() => setIsEditing(false)}
-//                     disabled={loading}
-//                   >
-//                     Cancel
-//                   </Button>
-//                   <Button type="submit" variant="primary" loading={loading}>
-//                     <FiSave className="w-5 h-5 mr-2" />
-//                     Save Changes
-//                   </Button>
-//                 </div>
-//               )}
-//             </form>
-//           </Card>
-//         </div>
-
-//         {/* Sidebar */}
-//         <div className="space-y-6">
-//           <Card>
-//             <h3 className="font-bold mb-4">Account Status</h3>
-//             <div className="space-y-3">
-//               <div className="flex justify-between">
-//                 <span className="text-gray-600 dark:text-gray-300">Account Created</span>
-//                 <span className="font-medium">
-//                   {user?.createdAt
-//                     ? new Date(user.createdAt).toLocaleDateString()
-//                     : "N/A"}
-//                 </span>
-//               </div>
-//             </div>
-//           </Card>
-
-//           <Card>
-//             <h3 className="font-bold mb-4">Quick Actions</h3>
-//             <Button
-//               variant="outline"
-//               fullWidth
-//               onClick={() => {
-//                 navigate("/change-password");
-//               }}
-//             >
-//               <FiLock className="w-4 h-4 mr-2" />
-//               Change Password
-//             </Button>
-//           </Card>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Profile;
-// import React, { useState, useEffect } from "react";
-// import { useAuth } from "../context/AuthContext";
-// import { useMedications } from "../context/MedicationContext";
-// import Input from "../components/common/Input";
-// import Button from "../components/common/Button";
-// import Card from "../components/common/Card";
-// import { useNavigate } from "react-router-dom";
-// import {
-//   FiUser,
-//   FiMail,
-//   FiPhone,
-//   FiCalendar,
-//   FiMapPin,
-//   FiEdit2,
-//   FiSave,
-//   FiLock,
-//   FiShield,
-//   FiBell,
-//   FiActivity,
-// } from "react-icons/fi";
-
-// const Profile = () => {
-//   const { user, updateProfile } = useAuth();
-//   const { medications, getMedicationStats } = useMedications();
-//   const navigate = useNavigate();
-
-//   const [isEditing, setIsEditing] = useState(false);
-//   const [formData, setFormData] = useState({
-//     name: "",
-//     email: "",
-//     phone: "",
-//     birthDate: "",
-//     address: "",
-//     emergencyContact: "",
-//   });
-//   const [loading, setLoading] = useState(false);
-//   const [error, setError] = useState("");
-//   const [success, setSuccess] = useState("");
-
-//   useEffect(() => {
-//     if (user) {
-//       setFormData({
-//         name: user.name || "",
-//         email: user.email || "",
-//         phone: user.phone || "",
-//         birthDate: user.birthDate || "",
-//         address: user.address || "",
-//         emergencyContact: user.emergencyContact || "",
-//       });
-//     }
-//   }, [user]);
-
-//   const handleInputChange = (e) => {
-//     const { name, value } = e.target;
-//     setFormData((prev) => ({ ...prev, [name]: value }));
-//   };
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     setLoading(true);
-//     setError("");
-//     setSuccess("");
-
-//     try {
-//       const result = await updateProfile(formData);
-//       if (result.success) {
-//         setSuccess("Profile updated successfully!");
-//         setIsEditing(false);
-//       } else {
-//         setError(result.error || "Failed to update profile");
-//       }
-//     } catch {
-//       setError("An error occurred. Please try again.");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   /* ================== DYNAMIC STATS ================== */
-//   const stats = getMedicationStats();
-//   const adherenceRate = medications.length
-//     ? Math.round((stats.active / medications.length) * 100)
-//     : 0;
-
-//   const userStats = [
-//     {
-//       label: "Medication Streak",
-//       value: `${stats.today} days`,
-//       icon: FiActivity,
-//       color: "bg-blue-50 dark:bg-blue-900 text-blue-800 dark:text-blue-100",
-//     },
-//     {
-//       label: "Adherence Rate",
-//       value: `${adherenceRate}%`,
-//       icon: FiBell,
-//       color: "bg-green-50 dark:bg-green-900 text-green-800 dark:text-green-100",
-//     },
-//     {
-//       label: "Active Medications",
-//       value: stats.active,
-//       icon: FiShield,
-//       color: "bg-purple-50 dark:bg-purple-900 text-purple-800 dark:text-purple-100",
-//     },
-//     {
-//       label: "Total Medications",
-//       value: stats.total,
-//       icon: FiActivity,
-//       color: "bg-yellow-50 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-100",
-//     },
-//   ];
-//   /* =================================================== */
-
-//   if (!user) {
-//     return (
-//       <div className="flex justify-center items-center h-64 bg-gray-50 dark:bg-gray-900">
-//         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="space-y-6 p-4 md:p-6 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
-//       {/* Header */}
-//       <div className="flex justify-between items-center flex-wrap">
-//         <div>
-//           <h1 className="text-3xl font-bold">My Profile</h1>
-//           <p className="text-gray-600 dark:text-gray-400 mt-1">
-//             Manage your account and preferences
-//           </p>
-//         </div>
-//         {!isEditing && (
-//           <Button
-//             onClick={() => setIsEditing(true)}
-//             variant="primary"
-//             className="mt-2 md:mt-0"
-//           >
-//             <FiEdit2 className="w-5 h-5 mr-2" />
-//             Edit Profile
-//           </Button>
-//         )}
-//       </div>
-
-//       {/* Stats Cards */}
-//       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-//         {userStats.map((stat, index) => {
-//           const Icon = stat.icon;
-//           return (
-//             <Card key={index} className={`${stat.color}`}>
-//               <div className="flex items-center">
-//                 <div className="p-3 rounded-lg mr-4 bg-opacity-30">
-//                   <Icon className="w-6 h-6" />
-//                 </div>
-//                 <div>
-//                   <p className="text-2xl font-bold">{stat.value}</p>
-//                   <p className="text-sm">{stat.label}</p>
-//                 </div>
-//               </div>
-//             </Card>
-//           );
-//         })}
-//       </div>
-
-//       {/* Messages */}
-//       {error && (
-//         <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg p-4">
-//           <p className="text-red-700 dark:text-red-200">{error}</p>
-//         </div>
-//       )}
-//       {success && (
-//         <div className="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg p-4">
-//           <p className="text-green-700 dark:text-green-200">{success}</p>
-//         </div>
-//       )}
-
-//       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-//         {/* Profile Form */}
-//         <div className="lg:col-span-2">
-//           <Card>
-//             <form onSubmit={handleSubmit} className="space-y-6">
-//               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-//                 <Input
-//                   label="Full Name"
-//                   name="name"
-//                   value={formData.name}
-//                   onChange={handleInputChange}
-//                   disabled={!isEditing}
-//                   required
-//                   icon={<FiUser className="w-5 h-5 text-gray-400 dark:text-gray-300" />}
-//                 />
-//                 <Input
-//                   label="Email Address"
-//                   name="email"
-//                   type="email"
-//                   value={formData.email}
-//                   onChange={handleInputChange}
-//                   disabled={!isEditing}
-//                   required
-//                   icon={<FiMail className="w-5 h-5 text-gray-400 dark:text-gray-300" />}
-//                 />
-//               </div>
-
-//               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-//                 <Input
-//                   label="Phone Number"
-//                   name="phone"
-//                   type="tel"
-//                   value={formData.phone}
-//                   onChange={handleInputChange}
-//                   disabled={!isEditing}
-//                   icon={<FiPhone className="w-5 h-5 text-gray-400 dark:text-gray-300" />}
-//                 />
-//                 <Input
-//                   label="Birth Date"
-//                   name="birthDate"
-//                   type="date"
-//                   value={formData.birthDate}
-//                   onChange={handleInputChange}
-//                   disabled={!isEditing}
-//                   icon={<FiCalendar className="w-5 h-5 text-gray-400 dark:text-gray-300" />}
-//                 />
-//               </div>
-
-//               <Input
-//                 label="Address"
-//                 name="address"
-//                 value={formData.address}
-//                 onChange={handleInputChange}
-//                 disabled={!isEditing}
-//                 icon={<FiMapPin className="w-5 h-5 text-gray-400 dark:text-gray-300" />}
-//               />
-
-//               <Input
-//                 label="Emergency Contact"
-//                 name="emergencyContact"
-//                 value={formData.emergencyContact}
-//                 onChange={handleInputChange}
-//                 disabled={!isEditing}
-//                 helperText="Phone number of emergency contact"
-//                 icon={<FiPhone className="w-5 h-5 text-gray-400 dark:text-gray-300" />}
-//               />
-
-//               {isEditing && (
-//                 <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
-//                   <Button
-//                     type="button"
-//                     variant="outline"
-//                     onClick={() => setIsEditing(false)}
-//                     disabled={loading}
-//                   >
-//                     Cancel
-//                   </Button>
-//                   <Button type="submit" variant="primary" loading={loading}>
-//                     <FiSave className="w-5 h-5 mr-2" />
-//                     Save Changes
-//                   </Button>
-//                 </div>
-//               )}
-//             </form>
-//           </Card>
-//         </div>
-
-//         {/* Sidebar */}
-//         <div className="space-y-6">
-//           <Card>
-//             <h3 className="font-bold mb-4">Account Status</h3>
-//             <div className="space-y-3">
-//               <div className="flex justify-between">
-//                 <span className="text-gray-600 dark:text-gray-300">Account Created</span>
-//                 <span className="font-medium">
-//                   {user?.createdAt
-//                     ? new Date(user.createdAt).toLocaleDateString()
-//                     : "N/A"}
-//                 </span>
-//               </div>
-//             </div>
-//           </Card>
-
-//           <Card>
-//             <h3 className="font-bold mb-4">Quick Actions</h3>
-//             <Button
-//               variant="outline"
-//               fullWidth
-//               onClick={() => {
-//                 navigate("/change-password");
-//               }}
-//             >
-//               <FiLock className="w-4 h-4 mr-2" />
-//               Change Password
-//             </Button>
-//           </Card>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Profile;
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import dayjs from "dayjs";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useMedications } from "../context/MedicationContext";
+import { fetchDashboardAnalytics } from "../api/analytics";
 import Input from "../components/common/Input";
 import Button from "../components/common/Button";
 import Card from "../components/common/Card";
-import { useNavigate } from "react-router-dom";
 import {
   FiUser,
   FiMail,
@@ -866,11 +19,14 @@ import {
   FiShield,
   FiBell,
   FiActivity,
+  FiCamera,
+  FiTrash2,
 } from "react-icons/fi";
+import PageDoodle from "../components/common/PageDoodle";
 
 const Profile = () => {
   const { user, updateProfile } = useAuth();
-  const { medications, getMedicationStats } = useMedications();
+  const { getMedicationStats } = useMedications();
   const navigate = useNavigate();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -885,6 +41,10 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [adherenceRate, setAdherenceRate] = useState(0);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
+  const [previewImageFailed, setPreviewImageFailed] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -894,29 +54,147 @@ const Profile = () => {
         phone: user.phone || "",
         birthDate: user.birthDate || "",
         address: user.address || "",
-        emergencyContact: user.emergencyContact || "",
+        emergencyContact:
+          typeof user.emergencyContact === "string"
+            ? user.emergencyContact
+            : user.emergencyContact?.phone || "",
       });
+      setSelectedImage(null);
+      setImagePreview(user.profilePicture || "");
+      setPreviewImageFailed(false);
     }
   }, [user]);
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
+  useEffect(() => {
+    if (user?.role === 'doctor') {
+      setAdherenceRate(0);
+      return;
+    }
+
+    const loadAdherence = async () => {
+      try {
+        const endDate = dayjs().toDate();
+        const startDate = dayjs().subtract(30, "day").toDate();
+        const dashboardData = await fetchDashboardAnalytics({ startDate, endDate });
+        const rate = Number.parseFloat(dashboardData?.overview?.adherenceRate) || 0;
+        setAdherenceRate(rate);
+      } catch (fetchError) {
+        console.error("Failed to load profile adherence:", fetchError);
+        setAdherenceRate(0);
+      }
+    };
+
+    loadAdherence();
+  }, [user?.role]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const saveProfile = async ({ profileImageFile, successMessage, closeEditor = true } = {}) => {
     setLoading(true);
     setError("");
     setSuccess("");
 
     try {
-      const result = await updateProfile(formData);
+      const payload = new FormData();
+      payload.append("name", formData.name);
+      payload.append("phone", formData.phone);
+      payload.append("birthDate", formData.birthDate);
+      payload.append("address", formData.address);
+      payload.append("emergencyContact", formData.emergencyContact);
+      if (profileImageFile) {
+        payload.append("profilePicture", profileImageFile);
+      }
+
+      const result = await updateProfile(payload);
       if (result.success) {
-        setSuccess("Profile updated successfully!");
-        setIsEditing(false);
+        setSuccess(successMessage || "Profile updated successfully!");
+        setSelectedImage(null);
+        setImagePreview(result.data?.user?.profilePicture || imagePreview);
+        setPreviewImageFailed(false);
+        setIsEditing(!closeEditor);
+        return true;
+      }
+
+      setError(result.error || "Failed to update profile");
+      return false;
+    } catch {
+      setError("An error occurred. Please try again.");
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    if (imagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    setSelectedImage(file);
+    setImagePreview(URL.createObjectURL(file));
+    setPreviewImageFailed(false);
+    setIsEditing(true);
+    setSuccess("");
+    setError("");
+
+    await saveProfile({
+      profileImageFile: file,
+      successMessage: "Profile photo updated successfully!",
+      closeEditor: false,
+    });
+  };
+
+  const handleRemoveSelectedImage = () => {
+    if (imagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    setSelectedImage(null);
+    setImagePreview(user?.profilePicture || "");
+    setPreviewImageFailed(false);
+  };
+
+  const handleRemoveProfilePhoto = async () => {
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const payload = new FormData();
+      payload.append("name", formData.name);
+      payload.append("phone", formData.phone);
+      payload.append("birthDate", formData.birthDate);
+      payload.append("address", formData.address);
+      payload.append("emergencyContact", formData.emergencyContact);
+      payload.append("removeProfilePicture", "true");
+
+      const result = await updateProfile(payload);
+      if (result.success) {
+        if (imagePreview?.startsWith("blob:")) {
+          URL.revokeObjectURL(imagePreview);
+        }
+        setSelectedImage(null);
+        setImagePreview("");
+        setPreviewImageFailed(false);
+        setSuccess("Profile photo removed successfully!");
       } else {
-        setError(result.error || "Failed to update profile");
+        setError(result.error || "Failed to remove profile photo");
       }
     } catch {
       setError("An error occurred. Please try again.");
@@ -925,80 +203,107 @@ const Profile = () => {
     }
   };
 
-  const stats = getMedicationStats();
-  const adherenceRate = medications.length
-    ? Math.round((stats.active / medications.length) * 100)
-    : 0;
+  const handleCancelEdit = () => {
+    if (imagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    setFormData({
+      name: user?.name || "",
+      email: user?.email || "",
+      phone: user?.phone || "",
+      birthDate: user?.birthDate || "",
+      address: user?.address || "",
+      emergencyContact:
+        typeof user?.emergencyContact === "string"
+          ? user.emergencyContact
+          : user?.emergencyContact?.phone || "",
+    });
+    setSelectedImage(null);
+    setImagePreview(user?.profilePicture || "");
+    setPreviewImageFailed(false);
+    setIsEditing(false);
+    setError("");
+    setSuccess("");
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await saveProfile({ profileImageFile: selectedImage });
+  };
+
+  const stats = user?.role === 'doctor'
+    ? { today: 0, active: 0, total: 0 }
+    : getMedicationStats();
 
   const userStats = [
     {
-      label: "Medication Streak",
-      value: `${stats.today} days`,
+      label: user?.role === 'doctor' ? "Profile Status" : "Medication Streak",
+      value: user?.role === 'doctor' ? 'Doctor' : `${stats.today} days`,
       icon: FiActivity,
       bg: "bg-gradient-to-r from-blue-600 to-blue-400",
     },
     {
-      label: "Adherence Rate",
-      value: `${adherenceRate}%`,
+      label: user?.role === 'doctor' ? "Specialization" : "Adherence Rate",
+      value: user?.role === 'doctor' ? (user?.specialization || 'Doctor') : `${adherenceRate}%`,
       icon: FiBell,
       bg: "bg-gradient-to-r from-green-600 to-green-400",
     },
     {
-      label: "Active Medications",
-      value: stats.active,
+      label: user?.role === 'doctor' ? "Experience" : "Active Medications",
+      value: user?.role === 'doctor' ? `${user?.experience || 0} yrs` : stats.active,
       icon: FiShield,
       bg: "bg-gradient-to-r from-purple-600 to-purple-400",
     },
     {
-      label: "Total Medications",
-      value: stats.total,
+      label: user?.role === 'doctor' ? "Degree" : "Total Medications",
+      value: user?.role === 'doctor' ? (user?.degree || 'N/A') : stats.total,
       icon: FiActivity,
       bg: "bg-gradient-to-r from-yellow-600 to-yellow-400",
     },
   ];
 
+  const accountCreated =
+    user?.createdAt || user?.updatedAt
+      ? new Date(user?.createdAt || user?.updatedAt).toLocaleDateString()
+      : "N/A";
+
   if (!user) {
     return (
-      <div className="flex justify-center items-center h-64 bg-gray-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <div className="flex h-64 items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6 bg-gray-900 text-gray-100 min-h-screen">
-      {/* Header */}
-      <div className="flex justify-between items-center flex-wrap">
+    <div className="space-y-6 p-4 md:p-6">
+      <div className="flex flex-wrap items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">My Profile</h1>
-          <p className="text-gray-300 mt-1">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">My Profile</h1>
+          <p className="mt-1 text-gray-600 dark:text-gray-300">
             Manage your account and preferences
           </p>
         </div>
-        {!isEditing && (
-          <Button
-            onClick={() => setIsEditing(true)}
-            variant="primary"
-            className="mt-2 md:mt-0"
-          >
-            <FiEdit2 className="w-5 h-5 mr-2" />
-            Edit Profile
-          </Button>
-        )}
+        <div className="mt-2 md:mt-0 flex items-center gap-3">
+          <PageDoodle type="profile" className="hidden lg:block" />
+          {!isEditing && (
+            <Button onClick={() => setIsEditing(true)} variant="primary">
+              <FiEdit2 className="mr-2 h-5 w-5" />
+              Edit Profile
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         {userStats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <Card
-              key={index}
-              className={`${stat.bg} p-4 rounded-xl flex items-center text-white shadow-lg`}
-            >
-              <div className="flex items-center w-full">
-                <div className="p-3 rounded-lg mr-4 bg-white/20">
-                  <Icon className="w-6 h-6 text-white" />
+            <Card key={index} className={`${stat.bg} rounded-xl p-4 text-white shadow-lg`}>
+              <div className="flex items-center">
+                <div className="mr-4 rounded-lg bg-white/20 p-3">
+                  <Icon className="h-6 w-6 text-white" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{stat.value}</p>
@@ -1010,24 +315,85 @@ const Profile = () => {
         })}
       </div>
 
-      {/* Messages */}
       {error && (
-        <div className="bg-red-900 border border-red-700 rounded-lg p-4">
-          <p className="text-red-200">{error}</p>
-        </div>
-      )}
-      {success && (
-        <div className="bg-green-900 border border-green-700 rounded-lg p-4">
-          <p className="text-green-200">{success}</p>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-700 dark:bg-red-900">
+          <p className="text-red-700 dark:text-red-200">{error}</p>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Profile Form */}
+      {success && (
+        <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-700 dark:bg-green-900">
+          <p className="text-green-700 dark:text-green-200">{success}</p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <Card className="bg-gray-800 text-gray-100">
+          <Card className="text-gray-900 dark:text-gray-100">
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col gap-5 rounded-2xl border border-gray-200 bg-gray-50/70 p-5 dark:border-gray-700 dark:bg-gray-800/50 md:flex-row md:items-center">
+                <div className="relative h-24 w-24 overflow-hidden rounded-2xl border-4 border-white bg-gradient-to-br from-blue-100 to-indigo-200 shadow-lg dark:border-gray-800 dark:from-blue-900/50 dark:to-indigo-900/50">
+                  {imagePreview && !previewImageFailed ? (
+                    <img
+                      src={imagePreview}
+                      alt={formData.name || "Profile"}
+                      className="h-full w-full object-cover"
+                      onError={() => setPreviewImageFailed(true)}
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-blue-700 dark:text-blue-200">
+                      {(formData.name || user?.name || "U").charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Profile Photo</h3>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                    You can upload JPG, PNG, GIF, or WEBP files up to 5MB.
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <label className="inline-flex cursor-pointer items-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700">
+                      <FiCamera className="mr-2 h-4 w-4" />
+                      {imagePreview ? "Change Photo" : "Upload Photo"}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/gif,image/webp"
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+                    </label>
+                    {selectedImage && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveSelectedImage}
+                        className="inline-flex items-center rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                      >
+                        <FiTrash2 className="mr-2 h-4 w-4" />
+                        Remove New Photo
+                      </button>
+                    )}
+                    {!selectedImage && user?.profilePicture && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveProfilePhoto}
+                        disabled={loading}
+                        className="inline-flex items-center rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900/50 dark:text-red-300 dark:hover:bg-red-950/40"
+                      >
+                        <FiTrash2 className="mr-2 h-4 w-4" />
+                        Remove Photo
+                      </button>
+                    )}
+                  </div>
+                  {!isEditing && (
+                    <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                      Selecting a photo will update your profile photo immediately.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <Input
                   label="Full Name"
                   name="name"
@@ -1035,8 +401,8 @@ const Profile = () => {
                   onChange={handleInputChange}
                   disabled={!isEditing}
                   bold
-                  className="bg-gray-700 text-white"
-                  icon={<FiUser className="w-5 h-5 text-gray-300" />}
+                  className="bg-white text-gray-900 dark:bg-gray-800 dark:text-white"
+                  icon={<FiUser className="h-5 w-5 text-gray-400 dark:text-gray-300" />}
                 />
                 <Input
                   label="Email Address"
@@ -1046,12 +412,12 @@ const Profile = () => {
                   onChange={handleInputChange}
                   disabled={!isEditing}
                   bold
-                  className="bg-gray-700 text-white"
-                  icon={<FiMail className="w-5 h-5 text-gray-300" />}
+                  className="bg-white text-gray-900 dark:bg-gray-800 dark:text-white"
+                  icon={<FiMail className="h-5 w-5 text-gray-400 dark:text-gray-300" />}
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <Input
                   label="Phone Number"
                   name="phone"
@@ -1060,8 +426,8 @@ const Profile = () => {
                   onChange={handleInputChange}
                   disabled={!isEditing}
                   bold
-                  className="bg-gray-700 text-white"
-                  icon={<FiPhone className="w-5 h-5 text-gray-300" />}
+                  className="bg-white text-gray-900 dark:bg-gray-800 dark:text-white"
+                  icon={<FiPhone className="h-5 w-5 text-gray-400 dark:text-gray-300" />}
                 />
                 <Input
                   label="Birth Date"
@@ -1071,8 +437,8 @@ const Profile = () => {
                   onChange={handleInputChange}
                   disabled={!isEditing}
                   bold
-                  className="bg-gray-700 text-white"
-                  icon={<FiCalendar className="w-5 h-5 text-gray-300" />}
+                  className="bg-white text-gray-900 dark:bg-gray-800 dark:text-white"
+                  icon={<FiCalendar className="h-5 w-5 text-gray-400 dark:text-gray-300" />}
                 />
               </div>
 
@@ -1083,8 +449,8 @@ const Profile = () => {
                 onChange={handleInputChange}
                 disabled={!isEditing}
                 bold
-                className="bg-gray-700 text-white"
-                icon={<FiMapPin className="w-5 h-5 text-gray-300" />}
+                className="bg-white text-gray-900 dark:bg-gray-800 dark:text-white"
+                icon={<FiMapPin className="h-5 w-5 text-gray-400 dark:text-gray-300" />}
               />
 
               <Input
@@ -1095,22 +461,22 @@ const Profile = () => {
                 disabled={!isEditing}
                 helperText="Phone number of emergency contact"
                 bold
-                className="bg-gray-700 text-white"
-                icon={<FiPhone className="w-5 h-5 text-gray-300" />}
+                className="bg-white text-gray-900 dark:bg-gray-800 dark:text-white"
+                icon={<FiPhone className="h-5 w-5 text-gray-400 dark:text-gray-300" />}
               />
 
               {isEditing && (
-                <div className="flex justify-end space-x-4 pt-6 border-t border-gray-700">
+                <div className="flex justify-end space-x-4 border-t border-gray-200 pt-6 dark:border-gray-700">
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setIsEditing(false)}
+                    onClick={handleCancelEdit}
                     disabled={loading}
                   >
                     Cancel
                   </Button>
                   <Button type="submit" variant="primary" loading={loading}>
-                    <FiSave className="w-5 h-5 mr-2" />
+                    <FiSave className="mr-2 h-5 w-5" />
                     Save Changes
                   </Button>
                 </div>
@@ -1119,30 +485,21 @@ const Profile = () => {
           </Card>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
-          <Card className="bg-gray-800 text-gray-100">
-           <h3 className="font-bold mb-4 text-gray-900 dark:text-white">Account Status</h3>
+          <Card className="text-gray-900 dark:text-gray-100">
+            <h3 className="mb-4 font-bold text-gray-900 dark:text-white">Account Status</h3>
             <div className="space-y-3">
-              <div className="flex justify-between">
-                <span>Account Created</span>
-                <span className="font-semibold">
-                  {user?.createdAt
-                    ? new Date(user.createdAt).toLocaleDateString()
-                    : "N/A"}
-                </span>
+              <div className="flex justify-between gap-4">
+                <span className="text-gray-600 dark:text-gray-300">Account Created</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{accountCreated}</span>
               </div>
             </div>
           </Card>
 
-          <Card className="bg-gray-800 text-gray-100">
-           <h3 className="font-bold mb-4 text-gray-900 dark:text-white">Quick Actions</h3>
-            <Button
-              variant="outline"
-              fullWidth
-              onClick={() => navigate("/change-password")}
-            >
-              <FiLock className="w-4 h-4 mr-2" />
+          <Card className="text-gray-900 dark:text-gray-100">
+            <h3 className="mb-4 font-bold text-gray-900 dark:text-white">Quick Actions</h3>
+            <Button variant="outline" fullWidth onClick={() => navigate("/change-password")}>
+              <FiLock className="mr-2 h-4 w-4" />
               Change Password
             </Button>
           </Card>

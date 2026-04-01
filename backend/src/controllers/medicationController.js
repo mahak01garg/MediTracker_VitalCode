@@ -203,23 +203,39 @@ exports.generateDoses = async (req, res) => {
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
+    const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    const fullDayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const todayKeys = [dayNames[today.getDay()], fullDayNames[today.getDay()]];
     
     const newDoses = [];
 
     for (const schedule of medication.schedule) {
+      const scheduleDays = Array.isArray(schedule.day)
+        ? schedule.day.map((day) => String(day).toLowerCase())
+        : [String(schedule.day).toLowerCase()];
+      const appliesToday =
+        scheduleDays.includes('everyday') ||
+        scheduleDays.some((day) => todayKeys.includes(day));
+
+      if (!appliesToday) {
+        continue;
+      }
+
       for (const time of schedule.times) {
         const [hours, minutes] = time.split(':').map(Number);
         const scheduledTime = new Date(today);
         scheduledTime.setHours(hours, minutes, 0, 0);
 
-        // Only create if time is in the future today
-        if (scheduledTime > new Date() && scheduledTime < tomorrow) {
+        // Create any missing dose for today's schedule, even if the time
+        // has already passed, so the user can still mark it taken/missed.
+        if (scheduledTime >= today && scheduledTime < tomorrow) {
           
-          // Check if dose already exists for this time
+          // Do not regenerate a dose for the same medication/time,
+          // even if the previous one was already taken or missed.
           const existingDose = await Dose.findOne({
+            userId: req.user._id,
             medicationId: medication._id,
-            scheduledTime,
-            status: 'pending'
+            scheduledTime
           });
           
           if (!existingDose) {

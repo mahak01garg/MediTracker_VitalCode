@@ -4,6 +4,38 @@ const router = express.Router();
 const scheduleController = require('../controllers/scheduleController');
 const {auth,firebaseAuth} = require('../middleware/auth');
 
+const normalizeScheduleDays = (dayValue) => {
+  if (dayValue === 'everyday') {
+    return ['everyday'];
+  }
+
+  if (Array.isArray(dayValue)) {
+    return dayValue.map((day) => String(day).toLowerCase());
+  }
+
+  if (typeof dayValue === 'string') {
+    return [dayValue.toLowerCase()];
+  }
+
+  return [];
+};
+
+const getTodayScheduleKeys = (date) => {
+  const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+  const fullDayNames = [
+    'sunday',
+    'monday',
+    'tuesday',
+    'wednesday',
+    'thursday',
+    'friday',
+    'saturday'
+  ];
+
+  const dayIndex = date.getDay();
+  return [dayNames[dayIndex], fullDayNames[dayIndex]];
+};
+
 // All schedule routes require authentication
 router.use(auth);
 // Get complete status of all services
@@ -38,6 +70,9 @@ router.post('/generate-today-doses', auth, async (req, res) => {
     const userId = req.user._id;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const todayScheduleKeys = getTodayScheduleKeys(today);
     
     // Get all active medications for the user
     const medications = await Medication.find({ 
@@ -46,25 +81,43 @@ router.post('/generate-today-doses', auth, async (req, res) => {
     });
     
     let generatedCount = 0;
+    let existingCount = 0;
+    let eligibleCount = 0;
     
     for (const medication of medications) {
-      // Check if doses already exist for today
-      const existingDoses = await Dose.countDocuments({
-        userId,
-        medicationId: medication._id,
-        scheduledTime: { $gte: today }
-      });
-      
-      if (existingDoses === 0 && medication.schedule) {
+      if (medication.schedule) {
         // Generate doses for today based on schedule
-        medication.schedule.forEach(schedule => {
-          schedule.times.forEach(time => {
+        for (const schedule of medication.schedule) {
+          const scheduleDays = normalizeScheduleDays(schedule.day);
+          const appliesToday =
+            scheduleDays.includes('everyday') ||
+            scheduleDays.some((day) => todayScheduleKeys.includes(day));
+
+          if (!appliesToday) {
+            continue;
+          }
+
+          for (const time of schedule.times) {
             const [hours, minutes] = time.split(':').map(Number);
             const scheduledTime = new Date(today);
             scheduledTime.setHours(hours, minutes, 0, 0);
             
-            // Only create if time is in the future
-            if (scheduledTime > new Date()) {
+            // Create any missing dose for today, even if the scheduled time
+            // has already passed, so the user can still log it as taken/missed.
+            if (scheduledTime >= today && scheduledTime < tomorrow) {
+              eligibleCount++;
+
+              const existingDose = await Dose.findOne({
+                userId,
+                medicationId: medication._id,
+                scheduledTime
+              });
+
+              if (existingDose) {
+                existingCount++;
+                continue;
+              }
+
               const dose = new Dose({
                 userId,
                 medicationId: medication._id,
@@ -73,18 +126,25 @@ router.post('/generate-today-doses', auth, async (req, res) => {
                 status: 'pending'
               });
               
-              dose.save();
+              await dose.save();
               generatedCount++;
             }
-          });
-        });
+          }
+        }
       }
     }
     
     res.json({
       success: true,
-      message: `Generated ${generatedCount} doses for today`,
-      count: generatedCount
+      message:
+        generatedCount > 0
+          ? `Generated ${generatedCount} doses for today`
+          : eligibleCount > 0
+          ? "All today's doses are already available"
+          : "No doses are scheduled for today",
+      count: generatedCount,
+      existingCount,
+      eligibleCount
     });
     
   } catch (error) {

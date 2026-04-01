@@ -5,6 +5,7 @@ import { FiMessageSquare, FiHelpCircle, FiStar } from 'react-icons/fi';
 import { BsRobot } from 'react-icons/bs';
 import { useTheme } from '../context/ThemeContext';
 import DarkModeSwitch from '../components/common/DarkModeSwitch';
+import PageDoodle from '../components/common/PageDoodle';
 
 const ChatbotPage = () => {
     const exampleQuestions = [
@@ -45,7 +46,8 @@ const ChatbotPage = () => {
         </p>
       </div>
 
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-3">
+        <PageDoodle type="ai" className="hidden lg:block" />
         <span className="px-3 py-1 rounded-full text-sm font-medium
                          bg-green-100 dark:bg-green-900
                          text-green-800 dark:text-green-300">

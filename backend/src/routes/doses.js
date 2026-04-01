@@ -14,13 +14,13 @@ const rewardService = new RewardService();
 // Routes
 router.get('/upcoming', auth, async (req, res) => {   // ✅ use auth directly
     try {
-        const userId = req.user.id;
+        const userId = req.userId;
         const now = new Date();
         const endOfDay = new Date();
         endOfDay.setHours(23, 59, 59, 999);
 
         const doses = await Dose.find({
-            user: userId,
+            userId,
             scheduledTime: { $gte: now, $lte: endOfDay },
             status: 'pending'
         }).populate('medication', 'name dosage instructions')
@@ -29,6 +29,33 @@ router.get('/upcoming', auth, async (req, res) => {   // ✅ use auth directly
         res.json(doses);
     } catch (error) {
         console.error('Get upcoming doses error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+router.get('/history', auth, async (req, res) => {
+    try {
+        const userId = req.userId;
+        const { month } = req.query;
+        const monthDate = month ? new Date(`${month}-01T00:00:00.000Z`) : new Date();
+
+        if (Number.isNaN(monthDate.getTime())) {
+            return res.status(400).json({ error: 'Invalid month format. Use YYYY-MM.' });
+        }
+
+        const startOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+        const endOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59, 999);
+
+        const doses = await Dose.find({
+            userId,
+            scheduledTime: { $gte: startOfMonth, $lte: endOfMonth }
+        })
+            .select('scheduledTime actualTime status')
+            .sort({ scheduledTime: 1 });
+
+        res.json({ doses });
+    } catch (error) {
+        console.error('Get dose history error:', error);
         res.status(500).json({ error: 'Server error' });
     }
 });
@@ -42,7 +69,7 @@ router.post('/:id/take', auth, async (req, res) => {
     try {
         const dose = await Dose.findOne({
             _id: req.params.id,
-            user: req.user.id
+            userId: req.userId
         });
 
         if (!dose) {
@@ -81,7 +108,7 @@ router.post('/:id/miss', auth, async (req, res) => {
     try {
         const dose = await Dose.findOne({
             _id: req.params.id,
-            user: req.user.id
+            userId: req.userId
         });
 
         if (!dose) {

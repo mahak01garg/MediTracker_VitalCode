@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { 
+import {
     FiHeart, 
     FiGithub, 
     FiTwitter, 
@@ -10,6 +10,7 @@ import {
     FiShield,
     FiBook
 } from 'react-icons/fi';
+import { APP_CONSTANTS } from '../../utils/constants';
 
 const Footer = () => {
     const currentYear = new Date().getFullYear();
@@ -45,7 +46,7 @@ const Footer = () => {
         { icon: <FiGithub className="w-5 h-5" />, label: 'GitHub', url: 'https://github.com' },
         { icon: <FiTwitter className="w-5 h-5" />, label: 'Twitter', url: 'https://twitter.com' },
         { icon: <FiLinkedin className="w-5 h-5" />, label: 'LinkedIn', url: 'https://linkedin.com' },
-        { icon: <FiMail className="w-5 h-5" />, label: 'Email', url: 'mailto:support@meditracker.com' }
+        { icon: <FiMail className="w-5 h-5" />, label: 'Email', url: `mailto:${APP_CONSTANTS.SUPPORT_EMAIL}` }
     ];
 
     return (

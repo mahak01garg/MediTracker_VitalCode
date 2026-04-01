@@ -105,6 +105,8 @@
 //   );
 // }
 import React, { useState } from "react";
+import PageDoodle from "../components/common/PageDoodle";
+import { APP_CONSTANTS } from "../utils/constants";
 
 export default function Support() {
   const [openIndex, setOpenIndex] = useState(null);
@@ -136,9 +138,12 @@ export default function Support() {
     <div className="max-w-2xl mx-auto px-4 py-6 bg-gray-50 dark:bg-gray-900 rounded-lg shadow-lg">
       
       {/* Title */}
-      <h1 className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">
-        Help & Support
-      </h1>
+      <div className="flex items-start justify-between">
+        <h1 className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+          Help & Support
+        </h1>
+        <PageDoodle type="support" className="hidden md:block" />
+      </div>
       <p className="text-gray-700 dark:text-gray-300 mb-8">
         Assistance, FAQs, and important information about MediTracker.
       </p>
@@ -151,9 +156,21 @@ export default function Support() {
         <p className="text-gray-700 dark:text-gray-300">
           For any issues or questions, email us at:
         </p>
-        <p className="font-medium mt-1 text-indigo-700 dark:text-indigo-300">
-          support@meditracker.com
-        </p>
+        <div className="mt-3 space-y-2">
+          {APP_CONSTANTS.SUPPORT_CONTACTS.map((contact) => (
+            <div key={contact.email} className="rounded-md bg-indigo-50 px-3 py-2 dark:bg-indigo-950/40">
+              <p className="font-medium text-indigo-700 dark:text-indigo-300">
+                {contact.name}
+              </p>
+              <a
+                href={`mailto:${contact.email}`}
+                className="text-sm text-gray-700 underline decoration-indigo-400 underline-offset-2 dark:text-gray-300"
+              >
+                {contact.email}
+              </a>
+            </div>
+          ))}
+        </div>
       </section>
 
       <hr className="border-gray-300 dark:border-gray-700 mb-8" />

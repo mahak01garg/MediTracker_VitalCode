@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import PageDoodle from "../components/common/PageDoodle";
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -70,7 +71,10 @@ const ResetPassword = () => {
 
   return (
     <div className="auth-container">
-      <h2>Reset Password</h2>
+      <div className="mb-4 flex items-center justify-between">
+        <h2>Reset Password</h2>
+        <PageDoodle type="security" className="hidden md:block" />
+      </div>
 
       <form onSubmit={handleSubmit}>
         <input

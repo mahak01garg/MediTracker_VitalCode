@@ -640,6 +640,7 @@ import {
   FiAlertCircle,
 } from "react-icons/fi";
 import { GiPill } from "react-icons/gi";
+import PageDoodle from "../components/common/PageDoodle";
 import { motion } from "framer-motion";
 
 const Medications = () => {
@@ -704,13 +705,15 @@ const Medications = () => {
             Manage your medications and reminders
           </p>
         </div>
-
-        <Link to="/medications/add">
-          <Button variant="primary">
-            <FiPlus className="mr-2" />
-            Add Medication
-          </Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          <PageDoodle type="medication" className="hidden lg:block" />
+          <Link to="/medications/add">
+            <Button variant="primary">
+              <FiPlus className="mr-2" />
+              Add Medication
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* STATS */}

@@ -430,10 +430,12 @@ import {
   FiBell,
 } from "react-icons/fi";
 import { FaPills } from "react-icons/fa";
+import PageDoodle from "../components/common/PageDoodle";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { medications, fetchMedications } = useMedications();
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
   const [streak, setStreak] = useState(0);
   const [upcomingDoses, setUpcomingDoses] = useState([]);
@@ -444,7 +446,7 @@ const Dashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        "http://localhost:5000/api/medications/upcoming/today",
+        `${API_BASE_URL}/medications/upcoming/today`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -456,25 +458,21 @@ const Dashboard = () => {
     } catch (err) {
       console.error(err);
     }
-  }, []);
+  }, [API_BASE_URL]);
 
   const generateDosesForActiveMedications = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
-      const active = medications.filter(m => m.isActive);
-
-      for (const med of active) {
-        await axios.post(
-          `http://localhost:5000/api/medications/${med._id}/doses/generate`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      }
-      fetchTodayDoses();
+      await axios.post(
+        `${API_BASE_URL}/schedule/generate-today-doses`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      await fetchTodayDoses();
     } catch (err) {
       console.error(err);
     }
-  }, [medications, fetchTodayDoses]);
+  }, [API_BASE_URL, fetchTodayDoses]);
 
   const handleDoseAction = useCallback(async (doseId, action) => {
     const isReal = /^[0-9a-fA-F]{24}$/.test(doseId);
@@ -483,24 +481,24 @@ const Dashboard = () => {
       if (isReal) {
         const token = localStorage.getItem("token");
         await axios.put(
-          `http://localhost:5000/api/medications/doses/${doseId}`,
+          `${API_BASE_URL}/medications/doses/${doseId}`,
           { status: action },
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
         const rewardRes = await rewardAPI.getPoints();
         setRewardPoints(rewardRes?.points ?? rewardRes?.totalPoints ?? 0);
+        await fetchTodayDoses();
       } else {
         setRewardPoints(p => p + 10);
+        setUpcomingDoses(prev => prev.filter(d => d._id !== doseId));
       }
-
-      setUpcomingDoses(prev => prev.filter(d => d._id !== doseId));
       action === "taken" ? setStreak(s => s + 1) : setStreak(0);
 
     } catch (err) {
       console.error(err);
     }
-  }, []);
+  }, [API_BASE_URL, fetchTodayDoses]);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -567,10 +565,11 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Welcome */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-2xl text-white">
-        <h1 className="text-3xl font-bold">
+      <div className="relative bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 p-6 md:p-8 rounded-2xl text-white shadow-xl overflow-hidden">
+        <PageDoodle type="dashboard" className="absolute right-4 top-4 hidden md:block" />
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white">
           Welcome back, {user?.name?.split(" ")[0] || "User"} 👋
         </h1>
         <p className="text-blue-100 mt-2">Your medication overview for today</p>
@@ -581,7 +580,7 @@ const Dashboard = () => {
         {statCards.map((s, i) => {
           const Icon = s.icon;
           return (
-            <div key={i} className={`${s.bg} rounded-xl p-6 border dark:border-gray-700`}>
+            <div key={i} className={`${s.bg} rounded-2xl p-6 border border-white/60 dark:border-gray-700 shadow-sm`}>
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">{s.title}</p>
@@ -597,11 +596,11 @@ const Dashboard = () => {
       </div>
 
       {/* Main */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-8 items-start">
         {/* Left */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="xl:col-span-3 space-y-8">
           {/* Reminders */}
-          <div className="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-xl">
+          <div className="bg-white/95 dark:bg-gray-900 border dark:border-gray-700 rounded-2xl shadow-sm">
             <div className="p-6 border-b dark:border-gray-700 flex items-center">
               <FiClock className="text-blue-600 mr-3" />
               <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
@@ -609,7 +608,7 @@ const Dashboard = () => {
               </h2>
               <button
                 onClick={loadDashboard}
-                className="ml-auto bg-blue-100 dark:bg-blue-800 text-blue-600 dark:text-blue-300 px-3 py-1 rounded"
+                className="ml-auto bg-blue-100 dark:bg-blue-800 text-blue-600 dark:text-blue-300 px-3 py-1.5 rounded-xl text-sm font-semibold"
               >
                 Refresh
               </button>
@@ -631,7 +630,7 @@ const Dashboard = () => {
                   </p>
                   <button
                     onClick={generateDosesForActiveMedications}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                    className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700"
                   >
                     Generate Today's Doses
                   </button>
@@ -641,14 +640,14 @@ const Dashboard = () => {
           </div>
 
           {/* Active Meds */}
-          <div className="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-xl">
+          <div className="bg-white/95 dark:bg-gray-900 border dark:border-gray-700 rounded-2xl shadow-sm">
             <div className="p-6 border-b dark:border-gray-700 flex justify-between items-center">
               <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
                 Active Medications
               </h2>
               <Link
                 to="/medications/add"
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+                className="bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold"
               >
                 + Add New
               </Link>
@@ -666,7 +665,7 @@ const Dashboard = () => {
         </div>
 
         {/* Right */}
-        <div className="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-xl">
+        <div className="xl:col-span-2 bg-white/95 dark:bg-gray-900 border dark:border-gray-700 rounded-2xl shadow-sm">
           <div className="p-6 border-b dark:border-gray-700">
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
               AI Health Assistant
@@ -675,7 +674,7 @@ const Dashboard = () => {
               Ask about your medications
             </p>
           </div>
-          <div className="p-6">
+          <div className="p-6 lg:p-7">
             <Chatbot />
           </div>
         </div>

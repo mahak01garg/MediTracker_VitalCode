@@ -104,9 +104,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useTheme } from '../context/ThemeContext';
+import PageDoodle from '../components/common/PageDoodle';
 
 export default function Settings() {
   const navigate = useNavigate();
+  const { darkMode, toggleTheme } = useTheme();
   const [notifications, setNotifications] = useState(true);
 
   // Load saved notifications preference on mount
@@ -130,13 +133,16 @@ export default function Settings() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 bg-gray-50 rounded-lg shadow-lg">
-      <h1 className="text-2xl font-bold mb-6 text-blue-600">Settings</h1>
+    <div className="max-w-2xl mx-auto px-4 py-6 bg-gray-50 dark:bg-gray-900 rounded-lg shadow-lg dark:shadow-none">
+      <div className="flex items-start justify-between mb-6">
+        <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400">Settings</h1>
+        <PageDoodle type="settings" className="hidden md:block" />
+      </div>
 
       {/* Profile Section */}
-      <section className="mb-6 p-4 bg-white rounded-md shadow-sm border border-gray-200">
-        <h2 className="text-lg font-semibold mb-1">Profile</h2>
-        <p className="text-gray-700 mb-2">Update your personal information and account details.</p>
+      <section className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-md shadow-sm border border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-semibold mb-1 text-gray-900 dark:text-gray-100">Profile</h2>
+        <p className="text-gray-700 dark:text-gray-300 mb-2">Update your personal information and account details.</p>
         <button
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           onClick={() => navigate('/profile')}
@@ -146,9 +152,9 @@ export default function Settings() {
       </section>
 
       {/* Account Section */}
-      <section className="mb-6 p-4 bg-white rounded-md shadow-sm border border-gray-200">
-        <h2 className="text-lg font-semibold mb-1">Account</h2>
-        <p className="text-gray-700 mb-2">Manage your password and connected accounts.</p>
+      <section className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-md shadow-sm border border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-semibold mb-1 text-gray-900 dark:text-gray-100">Account</h2>
+        <p className="text-gray-700 dark:text-gray-300 mb-2">Manage your password and connected accounts.</p>
         <button
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           onClick={() => navigate('/change-password')}
@@ -158,8 +164,8 @@ export default function Settings() {
       </section>
 
       {/* Notifications Section */}
-      <section className="mb-6 p-4 bg-white rounded-md shadow-sm border border-gray-200">
-        <h2 className="text-lg font-semibold mb-2">Notifications</h2>
+      <section className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-md shadow-sm border border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Notifications</h2>
         <label className="flex items-center space-x-2">
           <input
             type="checkbox"
@@ -167,13 +173,29 @@ export default function Settings() {
             onChange={handleNotificationsChange}
             className="w-4 h-4"
           />
-          <span className="text-gray-700">Enable Email Notifications</span>
+          <span className="text-gray-700 dark:text-gray-300">Enable Email Notifications</span>
+        </label>
+      </section>
+
+      <section className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-md shadow-sm border border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Appearance</h2>
+        <label className="flex items-center justify-between gap-4">
+          <span className="text-gray-700 dark:text-gray-300">
+            {darkMode ? 'Dark mode is enabled' : 'Light mode is enabled'}
+          </span>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="px-4 py-2 bg-gray-900 text-white rounded hover:bg-gray-700 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
+          >
+            Switch Theme
+          </button>
         </label>
       </section>
 
       {/* Support Section */}
-      <section className="mb-6 p-4 bg-white rounded-md shadow-sm border border-gray-200">
-        <h2 className="text-lg font-semibold mb-2">Support</h2>
+      <section className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-md shadow-sm border border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Support</h2>
         <button
           onClick={() => navigate('/support')}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"

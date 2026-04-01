@@ -70,6 +70,7 @@
 
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Doctor = require('../models/doctor.models.js');
 const admin = require("../config/firebaseAdmin.js");
 
 // Backend JWT authentication middleware
@@ -81,11 +82,27 @@ const auth = async (req, res, next) => {
     }
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
-    if (!user) return res.status(401).json({ error: 'User no longer exists' });
-    req.user = user;
-    req.userId = decoded.userId;
-    next();
+
+    if (decoded.userId) {
+      const user = await User.findById(decoded.userId).select('-password');
+      if (!user) return res.status(401).json({ error: 'User no longer exists' });
+      req.user = user;
+      req.userId = decoded.userId;
+      req.authRole = 'patient';
+      return next();
+    }
+
+    if (decoded._id && decoded.userType === 'Doctor') {
+      const doctor = await Doctor.findById(decoded._id).select('-password -refreshToken');
+      if (!doctor) return res.status(401).json({ error: 'Doctor no longer exists' });
+      req.user = doctor;
+      req.userId = decoded._id;
+      req.doctor = doctor;
+      req.authRole = 'doctor';
+      return next();
+    }
+
+    return res.status(401).json({ error: 'Invalid token' });
   } catch (error) {
     console.error('Authentication error:', error);
     if (error.name === 'JsonWebTokenError') return res.status(401).json({ error: 'Invalid token' });

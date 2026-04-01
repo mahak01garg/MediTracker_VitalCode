@@ -2,7 +2,11 @@
 export const APP_CONSTANTS = {
     APP_NAME: 'MediTracker',
     VERSION: '1.0.0',
-    SUPPORT_EMAIL: 'support@meditracker.com',
+    SUPPORT_EMAIL: 'mahakgarg197@gmail.com',
+    SUPPORT_CONTACTS: [
+        { name: 'Mahak Garg', email: 'mahakgarg197@gmail.com' },
+        { name: 'Palak Sharma', email: 'palakcbse2023@gmail.com' }
+    ],
     SUPPORT_PHONE: '+1-800-MED-TRACK',
     COMPANY_NAME: 'MediTracker Health Inc.',
     COMPANY_ADDRESS: '123 Health Street, Suite 100, San Francisco, CA 94107'

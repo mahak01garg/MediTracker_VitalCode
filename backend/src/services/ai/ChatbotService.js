@@ -1,183 +1,330 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const logger = require('../../utils/logger');
+const logger = require("../../utils/logger");
+const Dose = require("../../models/Dose");
+const Medication = require("../../models/Medication");
 
-// Initialize Gemini
 let genAI = null;
 let isAIConfigured = false;
 
 try {
     const apiKey = process.env.GOOGLE_API_KEY;
-    
-    if (apiKey && apiKey.trim() !== '' && apiKey.startsWith('AIza')) {
+
+    if (apiKey && apiKey.trim() && apiKey.startsWith("AIza")) {
         genAI = new GoogleGenerativeAI(apiKey.trim());
         isAIConfigured = true;
-        logger.info('✅ Gemini AI service initialized with FREE LATEST models');
+        logger.info("Gemini AI service initialized.");
     } else {
-        logger.warn('⚠️ Gemini API key missing. AI features disabled.');
+        logger.warn("Gemini API key missing. AI features disabled.");
     }
 } catch (error) {
-    logger.error('Gemini initialization error:', error.message);
+    logger.error("Gemini initialization error:", error.message);
 }
 
 class ChatbotService {
     constructor() {
-        // USE THESE MODELS - THEY'RE FREE AND WORK!
         this.availableModels = [
-            'gemini-flash-latest',      // Fast, free, latest flash
-            'gemini-flash-lite-latest', // Even lighter
-            'gemini-pro-latest',        // Latest pro model
-            'gemini-2.0-flash-lite',    // Might work with free tier
-            'gemini-2.0-flash-lite-001' // Another free option
+            "gemini-2.0-flash-lite",
+            "gemini-flash-lite-latest",
+            "gemini-flash-latest",
         ];
-        
-        this.currentModelIndex = 0;
-        this.modelName = this.availableModels[0];
+        this.requestTimeoutMs = 12000;
+    }
+
+    buildPrompt(query) {
+        return [
+            "You are MediTracker AI, a medication assistant inside a medication tracking app.",
+            "Answer in a calm, practical tone.",
+            "Use short paragraphs or bullet points when helpful.",
+            "Keep the answer concise and readable, usually under 160 words.",
+            "Do not use markdown tables or decorative symbols.",
+            "If the question could affect safety, briefly remind the user to consult a healthcare professional.",
+            `User question: "${query}"`,
+        ].join("\n");
+    }
+
+    isTodayDoseQuery(query) {
+        const lowerQuery = String(query || "").toLowerCase();
+        const asksForToday = /\btoday\b/.test(lowerQuery);
+        const asksForMedicationData =
+            /(dose|doses|doese|medicine|medicines|medication|medications|schedule|scheduled|reminder|pill|pills|tablet|tablets|med|meds)/.test(
+                lowerQuery
+            );
+
+        return (
+            asksForToday &&
+            asksForMedicationData
+        );
+    }
+
+    async getTodayDoseData(userId) {
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const endOfDay = new Date(startOfDay);
+        endOfDay.setDate(endOfDay.getDate() + 1);
+
+        const doses = await Dose.find({
+            userId,
+            scheduledTime: { $gte: startOfDay, $lt: endOfDay },
+        })
+            .populate("medicationId", "name dosage")
+            .sort({ scheduledTime: 1 });
+
+        const activeMedications = await Medication.find({
+            userId,
+            isActive: true,
+        }).select("name dosage schedule");
+
+        return { doses, activeMedications, startOfDay };
+    }
+
+    formatTime(date) {
+        return new Date(date).toLocaleTimeString("en-IN", {
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    }
+
+    buildTodayDoseResponse(data) {
+        const { doses, activeMedications } = data;
+
+        if (!activeMedications.length) {
+            return [
+                "You do not have any active medications right now.",
+                "Add a medication first, then I can show your doses for today.",
+            ].join("\n\n");
+        }
+
+        if (!doses.length) {
+            return [
+                "I could not find any generated doses for today in your account.",
+                `You currently have ${activeMedications.length} active medication${activeMedications.length === 1 ? "" : "s"}.`,
+                "If you already set schedules, use Generate Today's Doses and then ask me again.",
+            ].join("\n\n");
+        }
+
+        const pending = doses.filter((dose) => dose.status === "pending" || dose.status === "snoozed");
+        const taken = doses.filter((dose) => dose.status === "taken");
+        const missed = doses.filter((dose) => dose.status === "missed");
+
+        const lines = [];
+        lines.push(`You have ${doses.length} dose${doses.length === 1 ? "" : "s"} scheduled for today.`);
+
+        if (pending.length) {
+            lines.push("");
+            lines.push(`Upcoming or pending (${pending.length}):`);
+            pending.forEach((dose) => {
+                const name = dose.medicationId?.name || "Medication";
+                const dosage = dose.medicationId?.dosage || dose.dosage || "";
+                lines.push(`- ${name}${dosage ? ` ${dosage}` : ""} at ${this.formatTime(dose.scheduledTime)}`);
+            });
+        }
+
+        if (taken.length) {
+            lines.push("");
+            lines.push(`Taken (${taken.length}):`);
+            taken.forEach((dose) => {
+                const name = dose.medicationId?.name || "Medication";
+                const dosage = dose.medicationId?.dosage || dose.dosage || "";
+                lines.push(`- ${name}${dosage ? ` ${dosage}` : ""} at ${this.formatTime(dose.scheduledTime)}`);
+            });
+        }
+
+        if (missed.length) {
+            lines.push("");
+            lines.push(`Missed (${missed.length}):`);
+            missed.forEach((dose) => {
+                const name = dose.medicationId?.name || "Medication";
+                const dosage = dose.medicationId?.dosage || dose.dosage || "";
+                lines.push(`- ${name}${dosage ? ` ${dosage}` : ""} at ${this.formatTime(dose.scheduledTime)}`);
+            });
+        }
+
+        return lines.join("\n");
+    }
+
+    async buildUserContext(userId, query) {
+        if (!userId) {
+            return "";
+        }
+
+        if (this.isTodayDoseQuery(query)) {
+            const todayData = await this.getTodayDoseData(userId);
+            return `User medication data for today:\n${this.buildTodayDoseResponse(todayData)}`;
+        }
+
+        return "";
+    }
+
+    async generateWithTimeout(model, prompt) {
+        const generationPromise = model.generateContent({
+            contents: [
+                {
+                    role: "user",
+                    parts: [{ text: prompt }],
+                },
+            ],
+            generationConfig: {
+                temperature: 0.5,
+                topK: 20,
+                topP: 0.9,
+                maxOutputTokens: 220,
+            },
+        });
+
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error("AI request timeout")), this.requestTimeoutMs);
+        });
+
+        const result = await Promise.race([generationPromise, timeoutPromise]);
+        const response = await result.response;
+        return response.text();
     }
 
     async processQuery(userId, query) {
-        if (!isAIConfigured || !genAI) {
-            return this.getFallbackResponse(query);
+        const userContext = await this.buildUserContext(userId, query);
+
+        if (userContext && this.isTodayDoseQuery(query)) {
+            return userContext.replace(/^User medication data for today:\n/, "");
         }
 
-        // Try all available models in sequence
-        for (let i = 0; i < this.availableModels.length; i++) {
-            const modelToTry = this.availableModels[i];
-            
+        if (!isAIConfigured || !genAI) {
+            return this.getFallbackResponse(query, userContext);
+        }
+
+        const prompt = [this.buildPrompt(query), userContext].filter(Boolean).join("\n\n");
+
+        for (const modelName of this.availableModels) {
             try {
-                logger.info(`🔄 Trying Gemini model: ${modelToTry}`);
-                
-                const model = genAI.getGenerativeModel({ 
-                    model: modelToTry 
-                });
+                logger.info(`Trying Gemini model: ${modelName}`);
 
-                // const prompt = `You are MediTracker AI, a helpful medication assistant.
-                // User query: "${query}"
-                
-                // Please respond helpfully about:
-                // - Medication schedules and timing
-                // - Side effect information  
-                // - Adherence tips
-                // - General medication questions
-                
-                // Always remind users to consult healthcare professionals for medical advice.
-                // Keep response concise, empathetic, and under 300 words.`;
-                const prompt = `You are MediTracker AI, a helpful medication assistant.
-User query: "${query}"
+                const model = genAI.getGenerativeModel({ model: modelName });
+                const aiResponse = await this.generateWithTimeout(model, prompt);
 
-Give a detailed answer in full sentences.
-Use bullet points if necessary.
-Explain clearly all symptoms, side effects, and recommendations.
-Always remind users to consult healthcare professionals.`;
-                const result = await model.generateContent({
-                    contents: [
-                        {
-                            role: "user",
-                            parts: [{ text: prompt }]
-                        }
-                    ],
-                    generationConfig: {
-                        temperature: 0.7,
-                        topK: 40,
-                        topP: 0.95,
-                        maxOutputTokens: 1000,
-                    }
-                });
+                logger.info(`AI response generated with model: ${modelName}`);
 
-                const response = await result.response;
-                const aiResponse = response.text();
-                
-                // Update current model if this one works
-                this.currentModelIndex = i;
-                this.modelName = modelToTry;
-                
-                logger.info(`✅ Success with model: ${modelToTry}`);
-                
                 return {
                     success: true,
                     response: aiResponse,
-                    model: modelToTry,
-                    free: true
+                    model: modelName,
                 };
-
             } catch (error) {
-                logger.warn(`❌ Model ${modelToTry} failed: ${error.message}`);
-                
-                // If it's a quota error, try next model
-                if (error.message.includes('quota') || error.message.includes('billing')) {
-                    continue; // Try next model
+                logger.warn(`Model ${modelName} failed: ${error.message}`);
+
+                const message = error.message.toLowerCase();
+                const isRetryable =
+                    message.includes("quota") ||
+                    message.includes("billing") ||
+                    message.includes("not found") ||
+                    message.includes("timeout") ||
+                    message.includes("unavailable");
+
+                if (!isRetryable) {
+                    break;
                 }
-                
-                // For other errors, use fallback
-                break;
             }
         }
-        
-        // All models failed, use fallback
-        logger.warn('All Gemini models failed, using fallback response');
-        return this.getFallbackResponse(query);
+
+        logger.warn("All Gemini models failed. Using fallback response.");
+        return this.getFallbackResponse(query, userContext);
     }
 
-    getFallbackResponse(query) {
-        const lowerQuery = query.toLowerCase();
-        
-        // Smart fallback responses
+    getFallbackResponse(query, userContext = "") {
+        const lowerQuery = String(query || "").toLowerCase();
+
+        if (userContext) {
+            return userContext.replace(/^User medication data for today:\n/, "");
+        }
+
         if (/(hi|hello|hey)/.test(lowerQuery)) {
-            return "Hello! 👋 I'm your MediTracker AI Assistant. How can I help with your medications today? 💊";
+            return "Hello! I'm your MediTracker AI Assistant. How can I help with your medications today?";
         }
-        
-        if (/(schedule|time|when)/.test(lowerQuery)) {
-            return `**Medication Scheduling Tips:**\n• Take at same time daily\n• Set reminders in MediTracker\n• Use pill organizers\n• Space doses evenly\n\nEnable push notifications to never miss a dose! 🔔`;
+
+        if (/(schedule|time|when|reminder)/.test(lowerQuery)) {
+            return [
+                "Medication scheduling tips:",
+                "- Take medicines at the same time each day.",
+                "- Turn on reminders in MediTracker.",
+                "- Keep medicines in a visible, safe place.",
+                "- Ask your doctor before changing timing.",
+                "",
+                "If you are unsure about your schedule, check with your healthcare professional.",
+            ].join("\n");
         }
-        
-        if (/(side|effect|symptom)/.test(lowerQuery)) {
-            return `**Side Effect Guidance:**\n• Contact doctor for severe symptoms\n• Note mild effects in health log\n• Never stop medication suddenly\n• Report all symptoms to healthcare provider\n\n🚨 For emergencies, seek immediate medical attention!`;
+
+        if (/(side effect|side-effects|effect|symptom)/.test(lowerQuery)) {
+            return [
+                "Side effect guidance:",
+                "- Track when the symptom started and how strong it feels.",
+                "- Contact your doctor for severe or unusual symptoms.",
+                "- Do not stop a prescribed medicine suddenly unless a clinician tells you to.",
+                "",
+                "For urgent symptoms, seek medical care right away.",
+            ].join("\n");
         }
-        
+
         if (/(forgot|missed|skip)/.test(lowerQuery)) {
-            return `**Missed Dose Protocol:**\n1. Take as soon as you remember\n2. If near next dose, skip missed one\n3. NEVER double dose\n4. Record in MediTracker app\n5. Adjust future reminders\n\nSet multiple reminders to avoid missing doses!`;
+            return [
+                "Missed dose guidance:",
+                "1. Take it when you remember if it is still safe to do so.",
+                "2. If it is almost time for the next dose, skip the missed one.",
+                "3. Do not double the next dose unless your doctor told you to.",
+                "4. Mark the dose in MediTracker so your schedule stays accurate.",
+                "",
+                "Check the medication instructions or ask a healthcare professional if you are unsure.",
+            ].join("\n");
         }
-        
-        return `I'm your MediTracker AI Assistant! I can help with:\n• Medication schedules and reminders\n• Side effect information\n• Adherence improvement tips\n• General medication questions\n\nWhat would you like to know about your medications? 💊`;
+
+        return [
+            "I can help with:",
+            "- Medication timing and reminders",
+            "- Missed dose questions",
+            "- Side effect guidance",
+            "- Adherence tips",
+            "",
+            "Ask me a medication question, and I will keep the answer simple and practical.",
+        ].join("\n");
+    }
+
+    async answerGeneralQuestion(query, userId) {
+        return this.processQuery(userId, query);
     }
 
     async healthCheck() {
-        if (!isAIConfigured) {
+        if (!isAIConfigured || !genAI) {
             return {
-                service: 'Google Gemini AI',
+                service: "Google Gemini AI",
                 configured: false,
-                status: 'DISABLED ❌',
-                error: 'API key not configured'
+                status: "DISABLED",
+                error: "API key not configured",
             };
         }
 
-        // Test if any model works
         for (const modelName of this.availableModels.slice(0, 2)) {
             try {
                 const model = genAI.getGenerativeModel({ model: modelName });
-                const result = await model.generateContent("Say 'OK'");
-                const response = await result.response;
-                
+                const text = await this.generateWithTimeout(model, "Reply with OK");
+
                 return {
-                    service: 'Google Gemini AI',
+                    service: "Google Gemini AI",
                     configured: true,
-                    status: 'ACTIVE ✅',
+                    status: "ACTIVE",
                     workingModel: modelName,
-                    testResponse: response.text(),
-                    free: true,
-                    availableModels: this.availableModels
+                    testResponse: text,
+                    availableModels: this.availableModels,
                 };
             } catch (error) {
-                continue;
+                logger.warn(`Health check failed for ${modelName}: ${error.message}`);
             }
         }
-        
+
         return {
-            service: 'Google Gemini AI',
+            service: "Google Gemini AI",
             configured: true,
-            status: 'ERROR ⚠️',
-            error: 'All models failed',
-            fallback: 'Using enhanced responses',
-            availableModels: this.availableModels
+            status: "ERROR",
+            error: "All models failed",
+            fallback: "Using local fallback responses",
+            availableModels: this.availableModels,
         };
     }
 }

@@ -16,6 +16,9 @@ resetOtpExpiry: Date,
   isGoogleAuth: { type: Boolean, default: false },          // Marks if user used Google login
   name: { type: String, required: true },
   phone: { type: String },
+  birthDate: { type: Date },
+  address: { type: String },
+  profilePicture: { type: String },
 
   emergencyContact: {
     name: String,

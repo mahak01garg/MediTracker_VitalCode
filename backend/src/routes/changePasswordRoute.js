@@ -2,14 +2,15 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const Doctor = require('../models/doctor.models.js');
 const {auth,firebaseAuth} = require('../middleware/auth'); // your JWT/auth check
 
 router.put('/change-password', auth, async (req, res) => {
     try {
         const { oldPassword, newPassword } = req.body;
         const userId = req.user.id;
-
-        const user = await User.findById(userId);
+        const Model = req.authRole === 'doctor' ? Doctor : User;
+        const user = await Model.findById(userId);
         if (!user) return res.status(404).json({ error: 'User not found' });
 
         const isMatch = await bcrypt.compare(oldPassword, user.password);

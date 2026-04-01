@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import PageDoodle from "../components/common/PageDoodle";
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -76,7 +77,8 @@ const ForgotPassword = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-50 to-purple-50 p-6">
-      <div className="max-w-md w-full bg-white shadow-lg rounded-2xl p-8">
+      <div className="max-w-md w-full bg-white shadow-lg rounded-2xl p-8 relative overflow-hidden">
+        <PageDoodle type="security" className="absolute right-4 top-4 hidden lg:block" />
         <h2 className="text-2xl font-bold text-center mb-6 text-gray-900">Forgot Password</h2>
 
         {error && (

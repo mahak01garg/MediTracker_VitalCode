@@ -5,6 +5,8 @@ export const chatWithAI = async (message) => {
   try {
     const response = await axios.post('/ai/chat', {
       query: message
+    }, {
+      timeout: 15000
     });
     return response.data;
   } catch (error) {

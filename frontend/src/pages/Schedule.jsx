@@ -1,1546 +1,8 @@
-
-// import React, { useState, useEffect } from 'react';
-// import { useNavigate, Link } from 'react-router-dom';
-// import axios from 'axios';
-// import { motion } from 'framer-motion';
-// import {
-//   FiClock,
-//   FiBell,
-//   FiCheckCircle,
-//   FiAlertTriangle,
-//   FiCalendar,
-//   FiTrendingUp,
-//   FiBarChart2,
-//   FiRefreshCw,
-//   FiPieChart,
-//   FiActivity,
-//   FiDatabase
-// } from 'react-icons/fi';
-// import { FaPills, FaUserMd, FaCalendarCheck } from 'react-icons/fa';
-
-
-// const MedicationSchedule = () => {
-//   const navigate = useNavigate();
-//   const [loading, setLoading] = useState(true);
-//   const [stats, setStats] = useState({
-//     activeMedications: 0,
-//     todayDoses: 0,
-//     upcomingDoses: 0,
-//     adherenceRate: 0,
-//     streak: 0,
-//     pendingReminders: 0
-//   });
-//   const [recentActivity, setRecentActivity] = useState([]);
-//   const [systemHealth, setSystemHealth] = useState({
-//     reminderService: 'active',
-//     doseTracker: 'active',
-//     notificationService: 'active',
-//     database: 'healthy'
-//   });
-//   const [notificationLoading, setNotificationLoading] = useState(false);
-
-//   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-//   useEffect(() => {
-//     fetchDashboardData();
-//   }, []);
-
-//   const fetchDashboardData = async () => {
-//     try {
-//       setLoading(true);
-
-//       // Fetch medication stats (mock if needed)
-//       const medsRes = await axios.get(`${API_BASE_URL}/medications`, {
-//         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-//       });
-
-//       const dosesRes = await axios.get(`${API_BASE_URL}/medications/upcoming/today`, {
-//         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-//       });
-
-//       const activeMeds = medsRes.data.filter(m => m.isActive).length;
-//       const todayDoses = dosesRes.data.doses?.length || 0;
-
-//       setStats({
-//         activeMedications: activeMeds,
-//         todayDoses,
-//         upcomingDoses: todayDoses,
-//         adherenceRate: 85, // mock value
-//         streak: 7,         // mock value
-//         pendingReminders: todayDoses
-//       });
-
-//       // Mock recent activity
-//       setRecentActivity([
-//         { id: 1, type: 'reminder', message: 'Paracetamol reminder sent', time: '10:30 AM', status: 'success' },
-//         { id: 2, type: 'dose', message: 'Dose marked as taken', time: '09:15 AM', status: 'success' },
-//         { id: 3, type: 'missed', message: 'Missed dose detected', time: 'Yesterday', status: 'warning' },
-//         { id: 4, type: 'report', message: 'Daily report generated', time: '08:00 AM', status: 'success' },
-//       ]);
-//     } catch (error) {
-//       console.error('Error fetching dashboard data:', error);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   // ✅ Send Test Notification Function
-//   const sendTestNotification = async () => {
-//     try {
-//       const token = localStorage.getItem('token');
-//       setNotificationLoading(true);
-
-//       const response = await axios.post(`${API_BASE_URL}/notifications/test`, {}, {
-//         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
-//       });
-
-//       if (response.data.success) {
-//         alert(`✅ Test Notification Sent Successfully!\nCheck email/push notifications.`);
-//         setSystemHealth(prev => ({ ...prev, notificationService: 'active', lastTest: new Date().toLocaleTimeString() }));
-//       } else {
-//         alert(`❌ Failed: ${response.data.error || 'Unknown error'}`);
-//       }
-
-//     } catch (error) {
-//       console.error(error);
-//       alert(`❌ Error sending test notification: ${error.message}`);
-//     } finally {
-//       setNotificationLoading(false);
-//     }
-//   };
-
-//   const quickActions = [
-//   {
-//     id: 1,
-//     title: "Generate Today's Doses",
-//     description: 'Create medication doses for today',
-//     icon: FaCalendarCheck,
-//     color: 'bg-blue-500',
-//     action: async () => {
-//       try {
-//         // 🔹 MOCKED: simulate success
-//         await new Promise(resolve => setTimeout(resolve, 500)); // 0.5s delay
-//         alert("✅ Today's doses generated successfully!");
-//         fetchDashboardData(); // refresh stats
-//       } catch {
-//         alert("❌ Failed to generate doses");
-//       }
-//     }
-//   },
-//   {
-//     id: 2,
-//     title: 'Send Test Reminder',
-//     description: 'Test notification system',
-//     icon: FiBell,
-//     color: 'bg-green-500',
-//     action: sendTestNotification
-//   },
-//   {
-//     id: 3,
-//     title: 'Check Missed Doses',
-//     description: 'Scan for missed medications',
-//     icon: FiAlertTriangle,
-//     color: 'bg-yellow-500',
-//     action: async () => {
-//       try {
-//         await new Promise(resolve => setTimeout(resolve, 500));
-//         alert('✅ Checked missed doses. None found!');
-//       } catch {
-//         alert('❌ Failed to check missed doses');
-//       }
-//     }
-//   },
-//   {
-//     id: 4,
-//     title: 'Generate Report',
-//     description: 'Create adherence report',
-//     icon: FiBarChart2,
-//     color: 'bg-purple-500',
-//     action: async () => {
-//       try {
-//         await new Promise(resolve => setTimeout(resolve, 500));
-//         alert('✅ Daily report generated! Check your email.');
-//       } catch {
-//         alert('❌ Failed to generate report');
-//       }
-//     }
-//   }
-// ];
-
-
-//   if (loading) {
-//     return (
-//       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
-//         <div className="text-center">
-//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-//           <p className="mt-4 text-gray-600">Loading medication dashboard...</p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-4 md:p-6">
-//       <div className="max-w-7xl mx-auto">
-//         {/* Header */}
-//         <div className="mb-8">
-//           <div className="flex items-center justify-between mb-6">
-//             <div>
-//               <button
-//                 onClick={() => navigate(-1)}
-//                 className="mb-4 px-4 py-2 text-gray-600 hover:text-gray-800 flex items-center"
-//               >
-//                 <FiClock className="mr-2" />
-//                 Back to Dashboard
-//               </button>
-//               <h1 className="text-3xl md:text-4xl font-bold text-gray-800 flex items-center">
-//                 <FaPills className="mr-3 text-blue-600" />
-//                 Medication Management Hub
-//               </h1>
-//               <p className="text-gray-600 mt-2">
-//                 Monitor and manage all your medication schedules and automated services
-//               </p>
-//             </div>
-//             <button
-//               onClick={fetchDashboardData}
-//               className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
-//             >
-//               <FiRefreshCw className="mr-2" />
-//               Refresh
-//             </button>
-//           </div>
-
-//           {/* Stats Overview */}
-//           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-//             <div className="bg-white rounded-xl shadow-sm p-6">
-//               <div className="flex items-center justify-between">
-//                 <div>
-//                   <p className="text-sm text-gray-500">Active Medications</p>
-//                   <p className="text-2xl font-bold text-gray-800 mt-2">{stats.activeMedications}</p>
-//                 </div>
-//                 <div className="bg-blue-100 p-3 rounded-full">
-//                   <FaPills className="w-6 h-6 text-blue-600" />
-//                 </div>
-//               </div>
-//               <Link to="/medications" className="text-blue-600 text-sm mt-4 block hover:text-blue-800">
-//                 View all medications →
-//               </Link>
-//             </div>
-
-//             <div className="bg-white rounded-xl shadow-sm p-6">
-//               <div className="flex items-center justify-between">
-//                 <div>
-//                   <p className="text-sm text-gray-500">Today's Doses</p>
-//                   <p className="text-2xl font-bold text-gray-800 mt-2">{stats.todayDoses}</p>
-//                 </div>
-//                 <div className="bg-green-100 p-3 rounded-full">
-//                   <FiCheckCircle className="w-6 h-6 text-green-600" />
-//                 </div>
-//               </div>
-//               <Link to="/medications/upcoming" className="text-green-600 text-sm mt-4 block hover:text-green-800">
-//                 View upcoming doses →
-//               </Link>
-//             </div>
-
-//             <div className="bg-white rounded-xl shadow-sm p-6">
-//               <div className="flex items-center justify-between">
-//                 <div>
-//                   <p className="text-sm text-gray-500">Adherence Rate</p>
-//                   <p className="text-2xl font-bold text-gray-800 mt-2">{stats.adherenceRate}%</p>
-//                 </div>
-//                 <div className="bg-purple-100 p-3 rounded-full">
-//                   <FiTrendingUp className="w-6 h-6 text-purple-600" />
-//                 </div>
-//               </div>
-//               <p className="text-purple-600 text-sm mt-4">Current streak: {stats.streak} days 🔥</p>
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* Main Content Grid */}
-//         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-//           {/* Left Column - Quick Actions */}
-//           <div className="lg:col-span-2">
-//             <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-//               <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-//                 <FiActivity className="mr-3 text-blue-600" />
-//                 Quick Actions
-//               </h2>
-//               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//                 {quickActions.map((action) => {
-//                   const Icon = action.icon;
-//                   return (
-//                     <motion.button
-//                       key={action.id}
-//                       whileHover={{ scale: 1.03 }}
-//                       whileTap={{ scale: 0.97 }}
-//                       onClick={action.action}
-//                       className="bg-white border border-gray-200 rounded-lg p-4 text-left hover:border-blue-300 hover:shadow-md transition-all"
-//                     >
-//                       <div className="flex items-center mb-3">
-//                         <div className={`${action.color} p-2 rounded-lg mr-3`}>
-//                           <Icon className="w-5 h-5 text-white" />
-//                         </div>
-//                         <h3 className="font-bold text-gray-800">{action.title}</h3>
-//                       </div>
-//                       <p className="text-sm text-gray-600">{action.description}</p>
-//                     </motion.button>
-//                   );
-//                 })}
-//               </div>
-//             </div>
-
-//             {/* Recent Activity */}
-//             <div className="bg-white rounded-xl shadow-sm p-6">
-//               <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-//                 <FiClock className="mr-3 text-blue-600" />
-//                 Recent Activity
-//               </h2>
-//               <div className="space-y-4">
-//                 {recentActivity.map((activity) => (
-//                   <div key={activity.id} className="flex items-center border-b border-gray-100 pb-4 last:border-0">
-//                     <div className={`p-2 rounded-lg mr-4 ${
-//                       activity.status === 'success' ? 'bg-green-100' :
-//                       activity.status === 'warning' ? 'bg-yellow-100' :
-//                       'bg-red-100'
-//                     }`}>
-//                       {activity.type === 'reminder' && <FiBell className={`w-4 h-4 ${
-//                         activity.status === 'success' ? 'text-green-600' :
-//                         activity.status === 'warning' ? 'text-yellow-600' :
-//                         'text-red-600'
-//                       }`} />}
-//                       {activity.type === 'dose' && <FaPills className={`w-4 h-4 ${
-//                         activity.status === 'success' ? 'text-green-600' :
-//                         activity.status === 'warning' ? 'text-yellow-600' :
-//                         'text-red-600'
-//                       }`} />}
-//                       {activity.type === 'missed' && <FiAlertTriangle className={`w-4 h-4 ${
-//                         activity.status === 'success' ? 'text-green-600' :
-//                         activity.status === 'warning' ? 'text-yellow-600' :
-//                         'text-red-600'
-//                       }`} />}
-//                       {activity.type === 'report' && <FiBarChart2 className={`w-4 h-4 ${
-//                         activity.status === 'success' ? 'text-green-600' :
-//                         activity.status === 'warning' ? 'text-yellow-600' :
-//                         'text-red-600'
-//                       }`} />}
-//                     </div>
-//                     <div className="flex-1">
-//                       <p className="text-gray-800">{activity.message}</p>
-//                       <p className="text-sm text-gray-500">{activity.time}</p>
-//                     </div>
-//                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-//                       activity.status === 'success' ? 'bg-green-100 text-green-800' :
-//                       activity.status === 'warning' ? 'bg-yellow-100 text-yellow-800' :
-//                       'bg-red-100 text-red-800'
-//                     }`}>
-//                       {activity.status}
-//                     </span>
-//                   </div>
-//                 ))}
-//               </div>
-//             </div>
-//           </div>
-
-//           {/* Right Column - System Health & Help */}
-//           <div className="space-y-8">
-//             {/* System Health */}
-//             <div className="bg-white rounded-xl shadow-sm p-6">
-//               <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-//                 <FiPieChart className="mr-3 text-blue-600" />
-//                 System Health
-//               </h2>
-//               {Object.entries(systemHealth).map(([key, value]) => (
-//                 <div key={key} className="flex items-center justify-between mb-2">
-//                   <span className="capitalize text-gray-700">{key.replace(/([A-Z])/g, ' $1')}</span>
-//                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-//                     value === 'active' || value === 'healthy' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-//                   }`}>
-//                     {value.charAt(0).toUpperCase() + value.slice(1)}
-//                   </span>
-//                 </div>
-//               ))}
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default MedicationSchedule;
-// import React, { useState, useEffect } from 'react';
-// import { useNavigate, Link } from 'react-router-dom';
-// import axios from 'axios';
-// import { motion } from 'framer-motion';
-// import {
-//   FiClock,
-//   FiBell,
-//   FiCheckCircle,
-//   FiAlertTriangle,
-//   FiTrendingUp,
-//   FiBarChart2,
-//   FiRefreshCw,
-//   FiPieChart,
-//   FiActivity
-// } from 'react-icons/fi';
-// import { FaPills, FaCalendarCheck } from 'react-icons/fa';
-// import { useNotifications } from '../context/NotificationContext'; // ✅ import notifications
-
-// const MedicationSchedule = () => {
-//   const navigate = useNavigate();
-//   const { addAlert } = useNotifications();
-
-//   const [loading, setLoading] = useState(true);
-//   const [stats, setStats] = useState({
-//     activeMedications: 0,
-//     todayDoses: 0,
-//     upcomingDoses: 0,
-//     adherenceRate: 0,
-//     streak: 0,
-//     pendingReminders: 0
-//   });
-//   const [recentActivity, setRecentActivity] = useState([]);
-//   const [systemHealth, setSystemHealth] = useState({
-//     reminderService: 'active',
-//     doseTracker: 'active',
-//     notificationService: 'active',
-//     database: 'healthy'
-//   });
-
-//   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-//   useEffect(() => {
-//     fetchDashboardData();
-//   }, []);
-
-//   const fetchDashboardData = async () => {
-//     try {
-//       setLoading(true);
-
-//       // 🔹 Mock API calls
-//       const medsRes = await axios.get(`${API_BASE_URL}/medications`, {
-//         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-//       });
-//       const dosesRes = await axios.get(`${API_BASE_URL}/medications/upcoming/today`, {
-//         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-//       });
-
-//       const activeMeds = medsRes.data.filter(m => m.isActive).length;
-//       const todayDoses = dosesRes.data.doses?.length || 0;
-
-//       setStats({
-//         activeMedications: activeMeds,
-//         todayDoses,
-//         upcomingDoses: todayDoses,
-//         adherenceRate: 85, // mock
-//         streak: 7,         // mock
-//         pendingReminders: todayDoses
-//       });
-
-//       // Mock recent activity
-//       setRecentActivity([
-//         { id: 1, type: 'reminder', message: 'Paracetamol reminder sent', time: '10:30 AM', status: 'success' },
-//         { id: 2, type: 'dose', message: 'Dose marked as taken', time: '09:15 AM', status: 'success' },
-//         { id: 3, type: 'missed', message: 'Missed dose detected', time: 'Yesterday', status: 'warning' },
-//         { id: 4, type: 'report', message: 'Daily report generated', time: '08:00 AM', status: 'success' },
-//       ]);
-//     } catch (error) {
-//       console.error('Error fetching dashboard data:', error);
-//       addAlert('❌ Failed to fetch dashboard data', 'error');
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   // Quick Actions
-//   const quickActions = [
-//     {
-//       id: 1,
-//       title: "Generate Today's Doses",
-//       description: 'Create medication doses for today',
-//       icon: FaCalendarCheck,
-//       color: 'bg-blue-500',
-//       action: async () => {
-//         try {
-//           await new Promise(resolve => setTimeout(resolve, 500));
-//           addAlert("✅ Today's doses generated successfully!", 'success');
-//           fetchDashboardData();
-//         } catch {
-//           addAlert("❌ Failed to generate today's doses", 'error');
-//         }
-//       }
-//     },
-//     {
-//       id: 2,
-//       title: 'Send Test Reminder',
-//       description: 'Test notification system',
-//       icon: FiBell,
-//       color: 'bg-green-500',
-//       action: async () => {
-//         try {
-//           await new Promise(resolve => setTimeout(resolve, 500));
-//           addAlert('✅ Test reminder sent!', 'success');
-//         } catch {
-//           addAlert('❌ Failed to send test reminder', 'error');
-//         }
-//       }
-//     },
-//     {
-//       id: 3,
-//       title: 'Check Missed Doses',
-//       description: 'Scan for missed medications',
-//       icon: FiAlertTriangle,
-//       color: 'bg-yellow-500',
-//       action: async () => {
-//         try {
-//           await new Promise(resolve => setTimeout(resolve, 500));
-//           addAlert('✅ Checked missed doses. None found!', 'success');
-//         } catch {
-//           addAlert('❌ Failed to check missed doses', 'error');
-//         }
-//       }
-//     },
-//     {
-//       id: 4,
-//       title: 'Generate Report',
-//       description: 'Create adherence report',
-//       icon: FiBarChart2,
-//       color: 'bg-purple-500',
-//       action: async () => {
-//         try {
-//           await new Promise(resolve => setTimeout(resolve, 500));
-//           addAlert('✅ Daily report generated! Check email.', 'success');
-//         } catch {
-//           addAlert('❌ Failed to generate report', 'error');
-//         }
-//       }
-//     }
-//   ];
-
-//   if (loading) {
-//     return (
-//       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
-//         <div className="text-center">
-//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-//           <p className="mt-4 text-gray-600">Loading medication dashboard...</p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-4 md:p-6">
-//       <div className="max-w-7xl mx-auto">
-//         {/* Header */}
-//         <div className="mb-8">
-//           <div className="flex items-center justify-between mb-6">
-//             <div>
-//               <button
-//                 onClick={() => navigate(-1)}
-//                 className="mb-4 px-4 py-2 text-gray-600 hover:text-gray-800 flex items-center"
-//               >
-//                 <FiClock className="mr-2" /> Back to Dashboard
-//               </button>
-//               <h1 className="text-3xl md:text-4xl font-bold text-gray-800 flex items-center">
-//                 <FaPills className="mr-3 text-blue-600" /> Medication Management Hub
-//               </h1>
-//               <p className="text-gray-600 mt-2">
-//                 Monitor and manage all your medication schedules and automated services
-//               </p>
-//             </div>
-//             <button
-//               onClick={fetchDashboardData}
-//               className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
-//             >
-//               <FiRefreshCw className="mr-2" /> Refresh
-//             </button>
-//           </div>
-
-//           {/* Stats Overview */}
-//           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-//             <div className="bg-white rounded-xl shadow-sm p-6 flex justify-between items-center">
-//               <div>
-//                 <p className="text-sm text-gray-500">Active Medications</p>
-//                 <p className="text-2xl font-bold text-gray-800 mt-2">{stats.activeMedications}</p>
-//               </div>
-//               <div className="bg-blue-100 p-3 rounded-full">
-//                 <FaPills className="w-6 h-6 text-blue-600" />
-//               </div>
-//             </div>
-//             <div className="bg-white rounded-xl shadow-sm p-6 flex justify-between items-center">
-//               <div>
-//                 <p className="text-sm text-gray-500">Today's Doses</p>
-//                 <p className="text-2xl font-bold text-gray-800 mt-2">{stats.todayDoses}</p>
-//               </div>
-//               <div className="bg-green-100 p-3 rounded-full">
-//                 <FiCheckCircle className="w-6 h-6 text-green-600" />
-//               </div>
-//             </div>
-//             <div className="bg-white rounded-xl shadow-sm p-6 flex justify-between items-center">
-//               <div>
-//                 <p className="text-sm text-gray-500">Adherence Rate</p>
-//                 <p className="text-2xl font-bold text-gray-800 mt-2">{stats.adherenceRate}%</p>
-//               </div>
-//               <div className="bg-purple-100 p-3 rounded-full">
-//                 <FiTrendingUp className="w-6 h-6 text-purple-600" />
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* Main Content Grid */}
-//         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-//           {/* Left Column - Quick Actions */}
-//           <div className="lg:col-span-2">
-//             <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-//               <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-//                 <FiActivity className="mr-3 text-blue-600" /> Quick Actions
-//               </h2>
-//               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//                 {quickActions.map(action => {
-//                   const Icon = action.icon;
-//                   return (
-//                     <motion.button
-//                       key={action.id}
-//                       whileHover={{ scale: 1.03 }}
-//                       whileTap={{ scale: 0.97 }}
-//                       onClick={action.action}
-//                       className="bg-white border border-gray-200 rounded-lg p-4 text-left hover:border-blue-300 hover:shadow-md transition-all"
-//                     >
-//                       <div className="flex items-center mb-3">
-//                         <div className={`${action.color} p-2 rounded-lg mr-3`}>
-//                           <Icon className="w-5 h-5 text-white" />
-//                         </div>
-//                         <h3 className="font-bold text-gray-800">{action.title}</h3>
-//                       </div>
-//                       <p className="text-sm text-gray-600">{action.description}</p>
-//                     </motion.button>
-//                   );
-//                 })}
-//               </div>
-//             </div>
-
-//             {/* Recent Activity */}
-//             <div className="bg-white rounded-xl shadow-sm p-6">
-//               <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-//                 <FiClock className="mr-3 text-blue-600" /> Recent Activity
-//               </h2>
-//               <div className="space-y-4">
-//                 {recentActivity.map(activity => (
-//                   <div key={activity.id} className="flex items-center border-b border-gray-100 pb-4 last:border-0">
-//                     <div className={`p-2 rounded-lg mr-4 ${
-//                       activity.status === 'success' ? 'bg-green-100' :
-//                       activity.status === 'warning' ? 'bg-yellow-100' :
-//                       'bg-red-100'
-//                     }`}>
-//                       {activity.type === 'reminder' && <FiBell className={`w-4 h-4 ${
-//                         activity.status === 'success' ? 'text-green-600' :
-//                         activity.status === 'warning' ? 'text-yellow-600' :
-//                         'text-red-600'
-//                       }`} />}
-//                       {activity.type === 'dose' && <FaPills className={`w-4 h-4 ${
-//                         activity.status === 'success' ? 'text-green-600' :
-//                         activity.status === 'warning' ? 'text-yellow-600' :
-//                         'text-red-600'
-//                       }`} />}
-//                       {activity.type === 'missed' && <FiAlertTriangle className={`w-4 h-4 ${
-//                         activity.status === 'success' ? 'text-green-600' :
-//                         activity.status === 'warning' ? 'text-yellow-600' :
-//                         'text-red-600'
-//                       }`} />}
-//                       {activity.type === 'report' && <FiBarChart2 className={`w-4 h-4 ${
-//                         activity.status === 'success' ? 'text-green-600' :
-//                         activity.status === 'warning' ? 'text-yellow-600' :
-//                         'text-red-600'
-//                       }`} />}
-//                     </div>
-//                     <div className="flex-1">
-//                       <p className="text-gray-800">{activity.message}</p>
-//                       <p className="text-sm text-gray-500">{activity.time}</p>
-//                     </div>
-//                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-//                       activity.status === 'success' ? 'bg-green-100 text-green-800' :
-//                       activity.status === 'warning' ? 'bg-yellow-100 text-yellow-800' :
-//                       'bg-red-100 text-red-800'
-//                     }`}>
-//                       {activity.status}
-//                     </span>
-//                   </div>
-//                 ))}
-//               </div>
-//             </div>
-//           </div>
-
-//           {/* Right Column - System Health */}
-//           <div className="space-y-8">
-//             <div className="bg-white rounded-xl shadow-sm p-6">
-//               <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-//                 <FiPieChart className="mr-3 text-blue-600" /> System Health
-//               </h2>
-//               {Object.entries(systemHealth).map(([key, value]) => (
-//                 <div key={key} className="flex items-center justify-between mb-2">
-//                   <span className="capitalize text-gray-700">{key.replace(/([A-Z])/g, ' $1')}</span>
-//                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-//                     value === 'active' || value === 'healthy' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-//                   }`}>
-//                     {value.charAt(0).toUpperCase() + value.slice(1)}
-//                   </span>
-//                 </div>
-//               ))}
-//             </div>
-//           </div>
-
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default MedicationSchedule;
-// import React, { useState, useEffect } from 'react';
-// import { useNavigate } from 'react-router-dom';
-// import axios from 'axios';
-// import { motion } from 'framer-motion';
-// import {
-//   FiClock, FiBell, FiCheckCircle, FiAlertTriangle, FiTrendingUp,
-//   FiBarChart2, FiRefreshCw, FiPieChart, FiActivity
-// } from 'react-icons/fi';
-// import { FaPills, FaCalendarCheck } from 'react-icons/fa';
-// import { useNotifications } from '../context/NotificationContext';
-
-// const MedicationSchedule = () => {
-//   const navigate = useNavigate();
-//   const { addAlert } = useNotifications();
-
-//   const [loading, setLoading] = useState(true);
-//   const [stats, setStats] = useState({
-//     activeMedications: 0,
-//     todayDoses: 0,
-//     upcomingDoses: 0,
-//     adherenceRate: 0,
-//     streak: 0,
-//     pendingReminders: 0
-//   });
-//   const [recentActivity, setRecentActivity] = useState([]);
-//   const [systemHealth, setSystemHealth] = useState({
-//     reminderService: 'active',
-//     doseTracker: 'active',
-//     notificationService: 'active',
-//     database: 'healthy'
-//   });
-
-//   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-//   useEffect(() => {
-//     fetchDashboardData();
-//   }, []);
-
-//   const fetchDashboardData = async () => {
-//     try {
-//       setLoading(true);
-
-//       const medsRes = await axios.get(`${API_BASE_URL}/medications`, {
-//         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-//       });
-//       const dosesRes = await axios.get(`${API_BASE_URL}/medications/upcoming/today`, {
-//         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-//       });
-
-//       const activeMeds = medsRes.data.filter(m => m.isActive).length;
-//       const todayDoses = dosesRes.data.doses?.length || 0;
-
-//       setStats({
-//         activeMedications: activeMeds,
-//         todayDoses,
-//         upcomingDoses: todayDoses,
-//         adherenceRate: 85,
-//         streak: 7,
-//         pendingReminders: todayDoses
-//       });
-
-//       setRecentActivity([
-//         { id: 1, type: 'reminder', message: 'Paracetamol reminder sent', time: '10:30 AM', status: 'success' },
-//         { id: 2, type: 'dose', message: 'Dose marked as taken', time: '09:15 AM', status: 'success' },
-//         { id: 3, type: 'missed', message: 'Missed dose detected', time: 'Yesterday', status: 'warning' },
-//         { id: 4, type: 'report', message: 'Daily report generated', time: '08:00 AM', status: 'success' },
-//       ]);
-//     } catch (error) {
-//       console.error('Error fetching dashboard data:', error);
-//       addAlert('❌ Failed to fetch dashboard data', 'error');
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const quickActions = [
-//     {
-//       id: 1,
-//       title: "Generate Today's Doses",
-//       description: 'Create medication doses for today',
-//       icon: FaCalendarCheck,
-//       color: 'bg-blue-500',
-//       action: async () => { addAlert("✅ Today's doses generated!", 'success'); fetchDashboardData(); }
-//     },
-//     {
-//       id: 2,
-//       title: 'Send Test Reminder',
-//       description: 'Test notification system',
-//       icon: FiBell,
-//       color: 'bg-green-500',
-//       action: async () => { addAlert('✅ Test reminder sent!', 'success'); }
-//     },
-//     {
-//       id: 3,
-//       title: 'Check Missed Doses',
-//       description: 'Scan for missed medications',
-//       icon: FiAlertTriangle,
-//       color: 'bg-yellow-500',
-//       action: async () => { addAlert('✅ Checked missed doses.', 'success'); }
-//     },
-//     {
-//       id: 4,
-//       title: 'Generate Report',
-//       description: 'Create adherence report',
-//       icon: FiBarChart2,
-//       color: 'bg-purple-500',
-//       action: async () => { addAlert('✅ Daily report generated!', 'success'); }
-//     }
-//   ];
-
-//   if (loading) {
-//     return (
-//       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-//         <div className="text-center">
-//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-//           <p className="mt-4 text-gray-600 dark:text-gray-300">Loading medication dashboard...</p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-screen p-4 md:p-6 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-//       <div className="max-w-7xl mx-auto">
-//         {/* Header */}
-//         <div className="mb-8">
-//           <div className="flex items-center justify-between mb-6">
-//             <div>
-//               <button
-//                 onClick={() => navigate(-1)}
-//                 className="mb-4 px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white flex items-center transition-colors"
-//               >
-//                 <FiClock className="mr-2" /> Back to Dashboard
-//               </button>
-//               <h1 className="text-3xl md:text-4xl font-bold flex items-center">
-//                 <FaPills className="mr-3 text-blue-600" /> Medication Management Hub
-//               </h1>
-//               <p className="text-gray-600 dark:text-gray-400 mt-2">
-//                 Monitor and manage all your medication schedules and automated services
-//               </p>
-//             </div>
-//             <button
-//               onClick={fetchDashboardData}
-//               className="px-4 py-2 bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-100 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors flex items-center"
-//             >
-//               <FiRefreshCw className="mr-2" /> Refresh
-//             </button>
-//           </div>
-
-//           {/* Stats Overview */}
-//           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-//             {/* Active Medications */}
-//             <div className="rounded-xl shadow-sm p-6 flex justify-between items-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-//               <div>
-//                 <p className="text-sm text-gray-500 dark:text-gray-400">Active Medications</p>
-//                 <p className="text-2xl font-bold mt-2">{stats.activeMedications}</p>
-//               </div>
-//               <div className="bg-blue-100 dark:bg-blue-800 p-3 rounded-full">
-//                 <FaPills className="w-6 h-6 text-blue-600 dark:text-white" />
-//               </div>
-//             </div>
-//             {/* Today's Doses */}
-//             <div className="rounded-xl shadow-sm p-6 flex justify-between items-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-//               <div>
-//                 <p className="text-sm text-gray-500 dark:text-gray-400">Today's Doses</p>
-//                 <p className="text-2xl font-bold mt-2">{stats.todayDoses}</p>
-//               </div>
-//               <div className="bg-green-100 dark:bg-green-800 p-3 rounded-full">
-//                 <FiCheckCircle className="w-6 h-6 text-green-600 dark:text-white" />
-//               </div>
-//             </div>
-//             {/* Adherence Rate */}
-//             <div className="rounded-xl shadow-sm p-6 flex justify-between items-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-//               <div>
-//                 <p className="text-sm text-gray-500 dark:text-gray-400">Adherence Rate</p>
-//                 <p className="text-2xl font-bold mt-2">{stats.adherenceRate}%</p>
-//               </div>
-//               <div className="bg-purple-100 dark:bg-purple-800 p-3 rounded-full">
-//                 <FiTrendingUp className="w-6 h-6 text-purple-600 dark:text-white" />
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* Main Content Grid */}
-//         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-//           {/* Left Column - Quick Actions */}
-//           <div className="lg:col-span-2">
-//             <div className="rounded-xl shadow-sm p-6 mb-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-//               <h2 className="text-xl font-bold mb-6 flex items-center">
-//                 <FiActivity className="mr-3 text-blue-600 dark:text-white" /> Quick Actions
-//               </h2>
-//               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//                 {quickActions.map(action => {
-//                   const Icon = action.icon;
-//                   return (
-//                     <motion.button
-//                       key={action.id}
-//                       whileHover={{ scale: 1.03 }}
-//                       whileTap={{ scale: 0.97 }}
-//                       onClick={action.action}
-//                       className="flex flex-col bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg p-4 text-left hover:bg-gray-100 dark:hover:bg-gray-600 hover:shadow-md transition-all"
-//                     >
-//                       <div className="flex items-center mb-3">
-//                         <div className={`${action.color} p-2 rounded-lg mr-3 flex-shrink-0`}>
-//                           <Icon className="w-5 h-5 text-white" />
-//                         </div>
-//                         <h3 className="font-bold">{action.title}</h3>
-//                       </div>
-//                       <p className="text-sm text-gray-600 dark:text-gray-200">{action.description}</p>
-//                     </motion.button>
-//                   );
-//                 })}
-//               </div>
-//             </div>
-
-//             {/* Recent Activity */}
-//             <div className="rounded-xl shadow-sm p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-//               <h2 className="text-xl font-bold mb-6 flex items-center">
-//                 <FiClock className="mr-3 text-blue-600 dark:text-white" /> Recent Activity
-//               </h2>
-//               <div className="space-y-4">
-//                 {recentActivity.map(activity => (
-//                   <div key={activity.id} className="flex items-center border-b border-gray-100 dark:border-gray-700 pb-4 last:border-0">
-//                     <div className={`p-2 rounded-lg mr-4 ${
-//                       activity.status === 'success' ? 'bg-green-100 dark:bg-green-800' :
-//                       activity.status === 'warning' ? 'bg-yellow-100 dark:bg-yellow-800' :
-//                       'bg-red-100 dark:bg-red-800'
-//                     }`}>
-//                       {activity.type === 'reminder' && <FiBell className={`w-4 h-4 ${
-//                         activity.status === 'success' ? 'text-green-600 dark:text-green-200' :
-//                         activity.status === 'warning' ? 'text-yellow-600 dark:text-yellow-200' :
-//                         'text-red-600 dark:text-red-200'
-//                       }`} />}
-//                       {activity.type === 'dose' && <FaPills className={`w-4 h-4 ${
-//                         activity.status === 'success' ? 'text-green-600 dark:text-green-200' :
-//                         activity.status === 'warning' ? 'text-yellow-600 dark:text-yellow-200' :
-//                         'text-red-600 dark:text-red-200'
-//                       }`} />}
-//                       {activity.type === 'missed' && <FiAlertTriangle className={`w-4 h-4 ${
-//                         activity.status === 'success' ? 'text-green-600 dark:text-green-200' :
-//                         activity.status === 'warning' ? 'text-yellow-600 dark:text-yellow-200' :
-//                         'text-red-600 dark:text-red-200'
-//                       }`} />}
-//                       {activity.type === 'report' && <FiBarChart2 className={`w-4 h-4 ${
-//                         activity.status === 'success' ? 'text-green-600 dark:text-green-200' :
-//                         activity.status === 'warning' ? 'text-yellow-600 dark:text-yellow-200' :
-//                         'text-red-600 dark:text-red-200'
-//                       }`} />}
-//                     </div>
-//                     <div className="flex-1">
-//                       <p className="text-gray-800 dark:text-gray-100">{activity.message}</p>
-//                       <p className="text-sm text-gray-500 dark:text-gray-300">{activity.time}</p>
-//                     </div>
-//                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-//                       activity.status === 'success' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200' :
-//                       activity.status === 'warning' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200' :
-//                       'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200'
-//                     }`}>
-//                       {activity.status}
-//                     </span>
-//                   </div>
-//                 ))}
-//               </div>
-//             </div>
-//           </div>
-
-//           {/* Right Column - System Health */}
-//           <div className="space-y-8">
-//             <div className="rounded-xl shadow-sm p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-//               <h2 className="text-xl font-bold mb-6 flex items-center">
-//                 <FiPieChart className="mr-3 text-blue-600 dark:text-white" /> System Health
-//               </h2>
-//               {Object.entries(systemHealth).map(([key, value]) => (
-//                 <div key={key} className="flex items-center justify-between mb-2">
-//                   <span className="capitalize text-gray-700 dark:text-gray-300">{key.replace(/([A-Z])/g, ' $1')}</span>
-//                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-//                     value === 'active' || value === 'healthy' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200'
-//                   }`}>
-//                     {value.charAt(0).toUpperCase() + value.slice(1)}
-//                   </span>
-//                 </div>
-//               ))}
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default MedicationSchedule;
-
-// import React, { useState, useEffect } from 'react';
-// import { useNavigate } from 'react-router-dom';
-// import axios from 'axios';
-// import { motion } from 'framer-motion';
-// import {
-//   FiClock, FiBell, FiCheckCircle, FiAlertTriangle, FiTrendingUp,
-//   FiBarChart2, FiRefreshCw, FiPieChart, FiActivity
-// } from 'react-icons/fi';
-// import { FaPills, FaCalendarCheck } from 'react-icons/fa';
-// import { useNotifications } from '../context/NotificationContext';
-
-// const MedicationSchedule = () => {
-//   const navigate = useNavigate();
-//   const { addAlert } = useNotifications();
-
-//   const [loading, setLoading] = useState(true);
-//   const [stats, setStats] = useState({
-//     activeMedications: 0,
-//     todayDoses: 0,
-//     upcomingDoses: 0,
-//     adherenceRate: 0,
-//     streak: 0,
-//     pendingReminders: 0
-//   });
-//   const [recentActivity, setRecentActivity] = useState([]);
-//   const [systemHealth, setSystemHealth] = useState({
-//     reminderService: 'active',
-//     doseTracker: 'active',
-//     notificationService: 'active',
-//     database: 'healthy'
-//   });
-
-//   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-//   useEffect(() => {
-//     fetchDashboardData();
-//   }, []);
-
-//   const fetchDashboardData = async () => {
-//     try {
-//       setLoading(true);
-//       const medsRes = await axios.get(`${API_BASE_URL}/medications`, {
-//         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-//       });
-//       const dosesRes = await axios.get(`${API_BASE_URL}/medications/upcoming/today`, {
-//         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-//       });
-
-//       const activeMeds = medsRes.data.filter(m => m.isActive).length;
-//       const todayDoses = dosesRes.data.doses?.length || 0;
-
-//       setStats({
-//         activeMedications: activeMeds,
-//         todayDoses,
-//         upcomingDoses: todayDoses,
-//         adherenceRate: 85,
-//         streak: 7,
-//         pendingReminders: todayDoses
-//       });
-
-//       setRecentActivity([
-//         { id: 1, type: 'reminder', message: 'Paracetamol reminder sent', time: '10:30 AM', status: 'success' },
-//         { id: 2, type: 'dose', message: 'Dose marked as taken', time: '09:15 AM', status: 'success' },
-//         { id: 3, type: 'missed', message: 'Missed dose detected', time: 'Yesterday', status: 'warning' },
-//         { id: 4, type: 'report', message: 'Daily report generated', time: '08:00 AM', status: 'success' },
-//       ]);
-//     } catch (error) {
-//       console.error('Error fetching dashboard data:', error);
-//       addAlert('❌ Failed to fetch dashboard data', 'error');
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const quickActions = [
-//     { id: 1, title: "Generate Today's Doses", description: 'Create medication doses for today', icon: FaCalendarCheck, color: 'bg-blue-500', action: async () => { addAlert("✅ Today's doses generated!", 'success'); fetchDashboardData(); } },
-//     { id: 2, title: 'Send Test Reminder', description: 'Test notification system', icon: FiBell, color: 'bg-green-500', action: async () => { addAlert('✅ Test reminder sent!', 'success'); } },
-//     { id: 3, title: 'Check Missed Doses', description: 'Scan for missed medications', icon: FiAlertTriangle, color: 'bg-yellow-500', action: async () => { addAlert('✅ Checked missed doses.', 'success'); } },
-//     { id: 4, title: 'Generate Report', description: 'Create adherence report', icon: FiBarChart2, color: 'bg-purple-500', action: async () => { addAlert('✅ Daily report generated!', 'success'); } }
-//   ];
-
-//   if (loading) {
-//     return (
-//       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-//         <div className="text-center">
-//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-//           <p className="mt-4 text-gray-600 dark:text-gray-300">Loading medication dashboard...</p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-screen p-4 md:p-6 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-//       <div className="max-w-7xl mx-auto">
-//         {/* Header */}
-//         <div className="mb-8">
-//           <div className="flex items-center justify-between mb-6">
-//             <div>
-//               <button
-//                 onClick={() => navigate(-1)}
-//                 className="mb-4 px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white flex items-center transition-colors"
-//               >
-//                 <FiClock className="mr-2" /> Back to Dashboard
-//               </button>
-//               <h1 className="text-3xl md:text-4xl font-bold flex items-center">
-//                 <FaPills className="mr-3 text-blue-600" /> Medication Management Hub
-//               </h1>
-//               <p className="text-gray-600 dark:text-gray-400 mt-2">
-//                 Monitor and manage all your medication schedules and automated services
-//               </p>
-//             </div>
-//             <button
-//               onClick={fetchDashboardData}
-//               className="px-4 py-2 bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-100 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors flex items-center"
-//             >
-//               <FiRefreshCw className="mr-2" /> Refresh
-//             </button>
-//           </div>
-
-//           {/* Stats Overview with colored cards */}
-//           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-//             <div className="rounded-xl p-6 flex justify-between items-center bg-blue-50 dark:bg-blue-900 border border-blue-100 dark:border-blue-800">
-//               <div>
-//                 <p className="text-sm text-blue-600 dark:text-blue-300">Active Medications</p>
-//                 <p className="text-2xl font-bold mt-2">{stats.activeMedications}</p>
-//               </div>
-//               <div className="bg-blue-100 dark:bg-blue-800 p-3 rounded-full">
-//                 <FaPills className="w-6 h-6 text-blue-600 dark:text-white" />
-//               </div>
-//             </div>
-
-//             <div className="rounded-xl p-6 flex justify-between items-center bg-green-50 dark:bg-green-900 border border-green-100 dark:border-green-800">
-//               <div>
-//                 <p className="text-sm text-green-600 dark:text-green-300">Today's Doses</p>
-//                 <p className="text-2xl font-bold mt-2">{stats.todayDoses}</p>
-//               </div>
-//               <div className="bg-green-100 dark:bg-green-800 p-3 rounded-full">
-//                 <FiCheckCircle className="w-6 h-6 text-green-600 dark:text-white" />
-//               </div>
-//             </div>
-
-//             <div className="rounded-xl p-6 flex justify-between items-center bg-purple-50 dark:bg-purple-900 border border-purple-100 dark:border-purple-800">
-//               <div>
-//                 <p className="text-sm text-purple-600 dark:text-purple-300">Adherence Rate</p>
-//                 <p className="text-2xl font-bold mt-2">{stats.adherenceRate}%</p>
-//               </div>
-//               <div className="bg-purple-100 dark:bg-purple-800 p-3 rounded-full">
-//                 <FiTrendingUp className="w-6 h-6 text-purple-600 dark:text-white" />
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* Main Content Grid */}
-//         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-//           {/* Left Column - Quick Actions */}
-//           <div className="lg:col-span-2 space-y-8">
-//             <div className="rounded-xl p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-//               <h2 className="text-xl font-bold mb-6 flex items-center">
-//                 <FiActivity className="mr-3 text-blue-600 dark:text-white" /> Quick Actions
-//               </h2>
-//               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//                 {quickActions.map(action => {
-//                   const Icon = action.icon;
-// //                   return (
-// //                     <motion.button
-// //                       key={action.id}
-// //                       whileHover={{ scale: 1.03 }}
-// //                       whileTap={{ scale: 0.97 }}
-// //                       onClick={action.action}
-// //                       className={`flex flex-col p-4 rounded-lg text-left transition-all border ${
-// //                         action.color.replace('bg-', 'border-')
-// //                       } hover:shadow-lg`}
-// //                     >
-// //                       <div className="flex items-center mb-3">
-// //                         <div className={`${action.color} p-2 rounded-lg mr-3 flex-shrink-0`}>
-// //                           <Icon className="w-5 h-5 text-white" />
-// //                         </div>
-// //                         <h3 className="font-bold">{action.title}</h3>
-// //                       </div>
-// //                       <p className="text-sm text-gray-600 dark:text-gray-200">{action.description}</p>
-// //                     </motion.button>
-// //                   );
-// //                 })}
-// //               </div>
-// //             </div>
-// //           </div>
-
-// //           {/* Right Column - System Health */}
-// //           <div className="space-y-8">
-// //             <div className="rounded-xl shadow-sm p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-// //               <h2 className="text-xl font-bold mb-6 flex items-center">
-// //                 <FiPieChart className="mr-3 text-blue-600 dark:text-white" /> System Health
-// //               </h2>
-// //               {Object.entries(systemHealth).map(([key, value]) => (
-// //                 <div key={key} className="flex items-center justify-between mb-2">
-// //                   <span className="capitalize text-gray-700 dark:text-gray-300">{key.replace(/([A-Z])/g, ' $1')}</span>
-// //                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-// //                     value === 'active' || value === 'healthy'
-// //                       ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200'
-// //                       : 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200'
-// //                   }`}>
-// //                     {value.charAt(0).toUpperCase() + value.slice(1)}
-// //                   </span>
-// //                 </div>
-// //               ))}
-// //             </div>
-// //           </div>
-// //         </div>
-// //       </div>
-// //     </div>
-// //   );
-// // };
-
-// //export default MedicationSchedule;
-// import React, { useState, useEffect } from 'react';
-// import { useNavigate } from 'react-router-dom';
-// import axios from 'axios';
-// import { motion } from 'framer-motion';
-// import {
-//   FiClock,
-//   FiBell,
-//   FiCheckCircle,
-//   FiAlertTriangle,
-//   FiTrendingUp,
-//   FiBarChart2,
-//   FiRefreshCw,
-//   FiPieChart,
-//   FiActivity
-// } from 'react-icons/fi';
-// import { FaPills, FaCalendarCheck } from 'react-icons/fa';
-// import { useNotifications } from '../context/NotificationContext';
-
-// const MedicationSchedule = () => {
-//   const navigate = useNavigate();
-//   const { addAlert } = useNotifications();
-
-//   const [loading, setLoading] = useState(true);
-//   const [stats, setStats] = useState({
-//     activeMedications: 0,
-//     todayDoses: 0,
-//     upcomingDoses: 0,
-//     adherenceRate: 0,
-//     streak: 0,
-//     pendingReminders: 0
-//   });
-//   const [recentActivity, setRecentActivity] = useState([]);
-//   const [systemHealth, setSystemHealth] = useState({
-//     reminderService: 'active',
-//     doseTracker: 'active',
-//     notificationService: 'active',
-//     database: 'healthy'
-//   });
-
-//   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-//   useEffect(() => {
-//     fetchDashboardData();
-//   }, []);
-
-//   const fetchDashboardData = async () => {
-//     try {
-//       setLoading(true);
-
-//       const medsRes = await axios.get(`${API_BASE_URL}/medications`, {
-//         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-//       });
-//       const dosesRes = await axios.get(`${API_BASE_URL}/medications/upcoming/today`, {
-//         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-//       });
-
-//       const activeMeds = medsRes.data.filter(m => m.isActive).length;
-//       const todayDoses = dosesRes.data.doses?.length || 0;
-
-//       setStats({
-//         activeMedications: activeMeds,
-//         todayDoses,
-//         upcomingDoses: todayDoses,
-//         adherenceRate: 85, // mock
-//         streak: 7,         // mock
-//         pendingReminders: todayDoses
-//       });
-
-//       setRecentActivity([
-//         { id: 1, type: 'reminder', message: 'Paracetamol reminder sent', time: '10:30 AM', status: 'success' },
-//         { id: 2, type: 'dose', message: 'Dose marked as taken', time: '09:15 AM', status: 'success' },
-//         { id: 3, type: 'missed', message: 'Missed dose detected', time: 'Yesterday', status: 'warning' },
-//         { id: 4, type: 'report', message: 'Daily report generated', time: '08:00 AM', status: 'success' },
-//       ]);
-//     } catch (error) {
-//       console.error('Error fetching dashboard data:', error);
-//       addAlert('❌ Failed to fetch dashboard data', 'error');
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   // Quick Actions
-//   const quickActions = [
-//     {
-//       id: 1,
-//       title: "Generate Today's Doses",
-//       description: 'Create medication doses for today',
-//       icon: FaCalendarCheck,
-//       color: 'bg-blue-500',
-//       action: async () => {
-//         try {
-//           await new Promise(resolve => setTimeout(resolve, 500));
-//           addAlert("✅ Today's doses generated successfully!", 'success');
-//           fetchDashboardData();
-//         } catch {
-//           addAlert("❌ Failed to generate today's doses", 'error');
-//         }
-//       }
-//     },
-//     {
-//       id: 2,
-//       title: 'Send Test Reminder',
-//       description: 'Test notification system',
-//       icon: FiBell,
-//       color: 'bg-green-500',
-//       action: async () => {
-//         try {
-//           await new Promise(resolve => setTimeout(resolve, 500));
-//           addAlert('✅ Test reminder sent!', 'success');
-//         } catch {
-//           addAlert('❌ Failed to send test reminder', 'error');
-//         }
-//       }
-//     },
-//     {
-//       id: 3,
-//       title: 'Check Missed Doses',
-//       description: 'Scan for missed medications',
-//       icon: FiAlertTriangle,
-//       color: 'bg-yellow-500',
-//       action: async () => {
-//         try {
-//           await new Promise(resolve => setTimeout(resolve, 500));
-//           addAlert('✅ Checked missed doses. None found!', 'success');
-//         } catch {
-//           addAlert('❌ Failed to check missed doses', 'error');
-//         }
-//       }
-//     },
-//     {
-//       id: 4,
-//       title: 'Generate Report',
-//       description: 'Create adherence report',
-//       icon: FiBarChart2,
-//       color: 'bg-purple-500',
-//       action: async () => {
-//         try {
-//           await new Promise(resolve => setTimeout(resolve, 500));
-//           addAlert('✅ Daily report generated! Check email.', 'success');
-//         } catch {
-//           addAlert('❌ Failed to generate report', 'error');
-//         }
-//       }
-//     }
-//   ];
-
-//   if (loading) {
-//     return (
-//       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
-//         <div className="text-center">
-//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-//           <p className="mt-4 text-gray-600 dark:text-gray-300">Loading medication dashboard...</p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-screen p-4 md:p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
-//       <div className="max-w-7xl mx-auto">
-//         {/* Header */}
-//         <div className="mb-8">
-//           <div className="flex items-center justify-between mb-6">
-//             <div>
-//               <button
-//                 onClick={() => navigate(-1)}
-//                 className="mb-4 px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white flex items-center"
-//               >
-//                 <FiClock className="mr-2" /> Back to Dashboard
-//               </button>
-//               <h1 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 flex items-center">
-//                 <FaPills className="mr-3 text-blue-600 dark:text-blue-400" /> Medication Management Hub
-//               </h1>
-//               <p className="text-gray-600 dark:text-gray-300 mt-2">
-//                 Monitor and manage all your medication schedules and automated services
-//               </p>
-//             </div>
-//             <button
-//               onClick={fetchDashboardData}
-//               className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center"
-//             >
-//               <FiRefreshCw className="mr-2" /> Refresh
-//             </button>
-//           </div>
-
-//           {/* Stats Overview */}
-//           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-//             <div className="bg-blue-100 dark:bg-blue-900 rounded-xl shadow-sm p-6 flex justify-between items-center">
-//               <div>
-//                 <p className="text-sm text-gray-700 dark:text-gray-200">Active Medications</p>
-//                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{stats.activeMedications}</p>
-//               </div>
-//               <div className="bg-blue-200 dark:bg-blue-800 p-3 rounded-full">
-//                 <FaPills className="w-6 h-6 text-blue-600 dark:text-blue-300" />
-//               </div>
-//             </div>
-//             <div className="bg-green-100 dark:bg-green-900 rounded-xl shadow-sm p-6 flex justify-between items-center">
-//               <div>
-//                 <p className="text-sm text-gray-700 dark:text-gray-200">Today's Doses</p>
-//                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{stats.todayDoses}</p>
-//               </div>
-//               <div className="bg-green-200 dark:bg-green-800 p-3 rounded-full">
-//                 <FiCheckCircle className="w-6 h-6 text-green-600 dark:text-green-300" />
-//               </div>
-//             </div>
-//             <div className="bg-purple-100 dark:bg-purple-900 rounded-xl shadow-sm p-6 flex justify-between items-center">
-//               <div>
-//                 <p className="text-sm text-gray-700 dark:text-gray-200">Adherence Rate</p>
-//                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{stats.adherenceRate}%</p>
-//               </div>
-//               <div className="bg-purple-200 dark:bg-purple-800 p-3 rounded-full">
-//                 <FiTrendingUp className="w-6 h-6 text-purple-600 dark:text-purple-300" />
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* Main Grid */}
-//         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-//           {/* Left Column */}
-//           <div className="lg:col-span-2 space-y-8">
-//             {/* Quick Actions */}
-//             <div className="rounded-xl p-6 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-//               <h2 className="text-xl font-bold mb-6 flex items-center text-gray-900 dark:text-gray-100">
-//                 <FiActivity className="mr-3 text-blue-600 dark:text-blue-400" /> Quick Actions
-//               </h2>
-//               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//                 {quickActions.map(action => {
-//                   const Icon = action.icon;
-//                   return (
-//                     <motion.button
-//                       key={action.id}
-//                       whileHover={{ scale: 1.03 }}
-//                       whileTap={{ scale: 0.97 }}
-//                       onClick={action.action}
-//                       className="flex flex-col p-4 rounded-lg transition-all border shadow-sm bg-white dark:bg-gray-700 hover:shadow-md dark:hover:shadow-lg border-gray-200 dark:border-gray-600"
-//                     >
-//                       <div className="flex items-center mb-3">
-//                         <div className={`${action.color} p-2 rounded-lg mr-3 flex-shrink-0`}>
-//                           <Icon className="w-5 h-5 text-white" />
-//                         </div>
-//                         <h3 className="font-bold text-gray-900 dark:text-gray-100">{action.title}</h3>
-//                       </div>
-//                       <p className="text-sm text-gray-700 dark:text-gray-300">{action.description}</p>
-//                     </motion.button>
-//                   );
-//                 })}
-//               </div>
-//             </div>
-
-//             {/* Recent Activity */}
-//             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-//               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
-//                 <FiClock className="mr-3 text-blue-600 dark:text-blue-400" /> Recent Activity
-//               </h2>
-//               <div className="space-y-4">
-//                 {recentActivity.map(activity => (
-//                   <div key={activity.id} className="flex items-center border-b border-gray-100 dark:border-gray-700 pb-4 last:border-0">
-//                     <div className={`p-2 rounded-lg mr-4 ${
-//                       activity.status === 'success' ? 'bg-green-100 dark:bg-green-700' :
-//                       activity.status === 'warning' ? 'bg-yellow-100 dark:bg-yellow-700' :
-//                       'bg-red-100 dark:bg-red-700'
-//                     }`}>
-//                       {activity.type === 'reminder' && <FiBell className={`w-4 h-4 ${
-//                         activity.status === 'success' ? 'text-green-600 dark:text-green-200' :
-//                         activity.status === 'warning' ? 'text-yellow-600 dark:text-yellow-200' :
-//                         'text-red-600 dark:text-red-200'
-//                       }`} />}
-//                       {activity.type === 'dose' && <FaPills className={`w-4 h-4 ${
-//                         activity.status === 'success' ? 'text-green-600 dark:text-green-200' :
-//                         activity.status === 'warning' ? 'text-yellow-600 dark:text-yellow-200' :
-//                         'text-red-600 dark:text-red-200'
-//                       }`} />}
-//                       {activity.type === 'missed' && <FiAlertTriangle className={`w-4 h-4 ${
-//                         activity.status === 'success' ? 'text-green-600 dark:text-green-200' :
-//                         activity.status === 'warning' ? 'text-yellow-600 dark:text-yellow-200' :
-//                         'text-red-600 dark:text-red-200'
-//                       }`} />}
-//                       {activity.type === 'report' && <FiBarChart2 className={`w-4 h-4 ${
-//                         activity.status === 'success' ? 'text-green-600 dark:text-green-200' :
-//                         activity.status === 'warning' ? 'text-yellow-600 dark:text-yellow-200' :
-//                         'text-red-600 dark:text-red-200'
-//                       }`} />}
-//                     </div>
-//                     <div className="flex-1">
-//                       <p className="text-gray-900 dark:text-gray-100">{activity.message}</p>
-//                       <p className="text-sm text-gray-600 dark:text-gray-300">{activity.time}</p>
-//                     </div>
-//                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-//                       activity.status === 'success' ? 'bg-green-100 dark:bg-green-700 text-green-800 dark:text-green-200' :
-//                       activity.status === 'warning' ? 'bg-yellow-100 dark:bg-yellow-700 text-yellow-800 dark:text-yellow-200' :
-//                       'bg-red-100 dark:bg-red-700 text-red-800 dark:text-red-200'
-//                     }`}>
-//                       {activity.status}
-//                     </span>
-//                   </div>
-//                 ))}
-//               </div>
-//             </div>
-//           </div>
-
-//           {/* Right Column - System Health */}
-//           <div className="space-y-8">
-//             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-//               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
-//                 <FiPieChart className="mr-3 text-blue-600 dark:text-blue-400" /> System Health
-//               </h2>
-//               {Object.entries(systemHealth).map(([key, value]) => (
-//                 <div key={key} className="flex items-center justify-between mb-2">
-//                   <span className="capitalize text-gray-700 dark:text-gray-300">{key.replace(/([A-Z])/g, ' $1')}</span>
-//                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-//                     value === 'active' || value === 'healthy' ? 'bg-green-100 dark:bg-green-700 text-green-800 dark:text-green-200' : 
-//                     'bg-red-100 dark:bg-red-700 text-red-800 dark:text-red-200'
-//                   }`}>
-//                     {value.charAt(0).toUpperCase() + value.slice(1)}
-//                   </span>
-//                 </div>
-//               ))}
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default MedicationSchedule;
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { motion } from "framer-motion";
-import { Toaster, toast } from "react-hot-toast";
-
+import dayjs from "dayjs";
 import {
   FiClock,
   FiBell,
@@ -1550,83 +12,363 @@ import {
   FiBarChart2,
   FiRefreshCw,
   FiPieChart,
-  FiActivity
+  FiActivity,
+  FiX,
+  FiChevronLeft,
+  FiChevronRight,
 } from "react-icons/fi";
 import { FaPills, FaCalendarCheck } from "react-icons/fa";
-
 import { useNotifications } from "../context/NotificationContext";
+import PageDoodle from "../components/common/PageDoodle";
 
 const MedicationSchedule = () => {
   const navigate = useNavigate();
   const { addAlert } = useNotifications();
 
   const [loading, setLoading] = useState(true);
+  const [actionLoadingId, setActionLoadingId] = useState(null);
+  const [activeMedicationsList, setActiveMedicationsList] = useState([]);
+  const [todayDoseList, setTodayDoseList] = useState([]);
   const [stats, setStats] = useState({
     activeMedications: 0,
     todayDoses: 0,
-    adherenceRate: 0
+    adherenceRate: 0,
   });
+  const [actionModal, setActionModal] = useState(null);
+  const [reportModal, setReportModal] = useState(null);
   const [recentActivity, setRecentActivity] = useState([]);
-  const [systemHealth, setSystemHealth] = useState({
+  const [calendarMonth, setCalendarMonth] = useState(dayjs().startOf("month"));
+  const [doseHistory, setDoseHistory] = useState([]);
+  const [systemHealth] = useState({
     reminderService: "active",
     doseTracker: "active",
     notificationService: "active",
-    database: "healthy"
+    database: "healthy",
   });
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+  const authHeaders = {
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  };
+
+  const showActionModal = (title, message, type = "success") => {
+    setActionModal({ title, message, type });
+  };
+
+  const formatDoseTime = (dateString) =>
+    new Date(dateString).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+  const getDoseTimingText = (dateString) => {
+    const now = new Date();
+    const doseTime = new Date(dateString);
+    const diffMinutes = Math.round((doseTime - now) / 60000);
+
+    if (diffMinutes === 0) {
+      return "Now";
+    }
+
+    const absMinutes = Math.abs(diffMinutes);
+    const hours = Math.floor(absMinutes / 60);
+    const minutes = absMinutes % 60;
+    const timeText =
+      hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+
+    return diffMinutes > 0 ? `In ${timeText}` : `${timeText} ago`;
+  };
+
+  const getDoseStatusLabel = (dose) => {
+    if (dose?.status === "taken") {
+      return "Taken";
+    }
+
+    if (dose?.status === "missed") {
+      return "Missed";
+    }
+
+    if (dose?.status === "snoozed") {
+      return "Snoozed";
+    }
+
+    const now = new Date();
+    const doseTime = new Date(dose?.scheduledTime);
+
+    if (doseTime < now) {
+      return "Overdue";
+    }
+
+    const diffMinutes = Math.round((doseTime - now) / 60000);
+    if (diffMinutes <= 30) {
+      return "Due Soon";
+    }
+
+    return "Upcoming";
+  };
+
+  const getDoseStatusClasses = (dose) => {
+    const status = getDoseStatusLabel(dose);
+
+    if (status === "Taken") {
+      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+    }
+
+    if (status === "Missed") {
+      return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+    }
+
+    if (status === "Snoozed") {
+      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
+    }
+
+    if (status === "Overdue") {
+      return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
+    }
+
+    if (status === "Due Soon") {
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+    }
+
+    return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200";
+  };
 
   useEffect(() => {
     fetchDashboardData();
   }, []);
 
+  useEffect(() => {
+    fetchDoseHistory(calendarMonth);
+  }, [calendarMonth]);
+
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
 
-      // 🔹 Mock API calls
-      const medsRes = await axios.get(`${API_BASE_URL}/medications`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-      });
-      const dosesRes = await axios.get(`${API_BASE_URL}/medications/upcoming/today`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - 30);
+
+      const analyticsParams = new URLSearchParams({
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
       });
 
-      const activeMeds = medsRes.data.filter((m) => m.isActive).length;
-      const todayDoses = dosesRes.data.doses?.length || 0;
+      const [medsRes, dosesRes, reportRes, analyticsRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/medications`, { headers: authHeaders }),
+        axios.get(`${API_BASE_URL}/medications/upcoming/today`, { headers: authHeaders }),
+        axios.get(`${API_BASE_URL}/schedule/reports/daily`, { headers: authHeaders }),
+        axios.get(`${API_BASE_URL}/analytics/dashboard?${analyticsParams.toString()}`, {
+          headers: authHeaders,
+        }),
+      ]);
+
+      const activeMeds = Array.isArray(medsRes.data)
+        ? medsRes.data.filter((medication) => medication.isActive).length
+        : 0;
+      const todayDoses = dosesRes.data?.doses?.length || 0;
+      const dailyReport = reportRes.data?.report;
+      const analyticsOverview = analyticsRes.data?.data?.overview;
+      const activeMedicationItems = Array.isArray(medsRes.data)
+        ? medsRes.data.filter((medication) => medication.isActive)
+        : [];
+      const doseItems = Array.isArray(dosesRes.data?.doses) ? dosesRes.data.doses : [];
+      const adherenceRate =
+        Number.parseFloat(analyticsOverview?.adherenceRate) ||
+        Number.parseFloat(dailyReport?.adherenceRate) ||
+        0;
+
+      setActiveMedicationsList(activeMedicationItems);
+      setTodayDoseList(doseItems);
 
       setStats({
         activeMedications: activeMeds,
         todayDoses,
-        adherenceRate: 85 // mock
+        adherenceRate,
       });
 
       setRecentActivity([
-        { id: 1, type: "reminder", message: "Paracetamol reminder sent", time: "10:30 AM", status: "success" },
-        { id: 2, type: "dose", message: "Dose marked as taken", time: "09:15 AM", status: "success" },
-        { id: 3, type: "missed", message: "Missed dose detected", time: "Yesterday", status: "warning" },
-        { id: 4, type: "report", message: "Daily report generated", time: "08:00 AM", status: "success" }
+        {
+          id: 1,
+          type: "report",
+          message: dailyReport?.summary || "Daily report ready",
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          status: "success",
+        },
+        {
+          id: 2,
+          type: "dose",
+          message: `${todayDoses} doses scheduled for today`,
+          time: "Today",
+          status: todayDoses > 0 ? "success" : "warning",
+        },
+        {
+          id: 3,
+          type: "reminder",
+          message: `${activeMeds} active medications are being monitored`,
+          time: "Live",
+          status: "success",
+        },
       ]);
     } catch (error) {
       console.error(error);
-      addAlert("❌ Failed to fetch dashboard data", "error");
-      toast.error("❌ Failed to fetch dashboard data");
+      addAlert("Failed to fetch dashboard data", "error");
+      showActionModal("Dashboard Error", "Failed to fetch dashboard data", "error");
     } finally {
       setLoading(false);
     }
   };
 
-  // Helper for Quick Action alerts
-  const handleAction = async (actionFn, successMsg, errorMsg) => {
+  const fetchDoseHistory = async (monthDate) => {
     try {
-      await actionFn();
-      addAlert(successMsg, "success");
-      toast.success(successMsg);
-      fetchDashboardData();
-    } catch {
-      addAlert(errorMsg, "error");
-      toast.error(errorMsg);
+      const response = await axios.get(
+        `${API_BASE_URL}/doses/history?month=${monthDate.format("YYYY-MM")}`,
+        { headers: authHeaders }
+      );
+      setDoseHistory(Array.isArray(response.data?.doses) ? response.data.doses : []);
+    } catch (error) {
+      console.error("Failed to fetch dose history:", error);
+      setDoseHistory([]);
     }
+  };
+
+  const takenDoseDays = new Set(
+    doseHistory
+      .filter((dose) => dose.status === "taken")
+      .map((dose) => dayjs(dose.actualTime || dose.scheduledTime).format("YYYY-MM-DD"))
+  );
+
+  const monthStart = calendarMonth.startOf("month");
+  const calendarStart = monthStart.startOf("week");
+  const calendarDays = Array.from({ length: 42 }, (_, index) => calendarStart.add(index, "day"));
+  const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  const handleAction = async (actionId, actionFn, fallbackError) => {
+    try {
+      setActionLoadingId(actionId);
+      const result = await actionFn();
+
+      if (typeof result === "string") {
+        addAlert(result, "success");
+        showActionModal("Action Completed", result, "success");
+      } else if (result?.type === "doses") {
+        setActionModal(result);
+        addAlert(result.title, "success");
+      } else if (result?.type === "report") {
+        setReportModal(result);
+        addAlert(result.title, "success");
+      } else if (result?.message) {
+        addAlert(result.message, "success");
+        showActionModal("Action Completed", result.message, "success");
+      }
+
+      await fetchDashboardData();
+    } catch (error) {
+      const message =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        fallbackError;
+      addAlert(message, "error");
+      showActionModal("Action Failed", message, "error");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const generateTodayDoses = async () => {
+    const response = await axios.post(
+      `${API_BASE_URL}/schedule/generate-today-doses`,
+      {},
+      { headers: authHeaders }
+    );
+
+    const dosesResponse = await axios.get(`${API_BASE_URL}/medications/upcoming/today`, {
+      headers: authHeaders,
+    });
+    const doses = Array.isArray(dosesResponse.data?.doses) ? dosesResponse.data.doses : [];
+
+    let message = response.data?.message || "Today's doses are ready";
+    if ((response.data?.count ?? 0) === 0 && (response.data?.eligibleCount ?? 0) > 0) {
+      message = "All today's doses are already generated and available.";
+    }
+
+    return {
+      type: "doses",
+      title: "Today's Doses",
+      message,
+      doses,
+    };
+  };
+
+  const sendTestReminder = async () => {
+    const nextDose = [...todayDoseList].sort(
+      (a, b) => new Date(a.scheduledTime) - new Date(b.scheduledTime)
+    )[0];
+    const fallbackMedication = activeMedicationsList[0];
+
+    const medicationName =
+      nextDose?.medicationId?.name || fallbackMedication?.name || "Your next medication";
+    const dosage =
+      nextDose?.dosage || nextDose?.medicationId?.dosage || fallbackMedication?.dosage || "Scheduled dose";
+    const scheduledTime = nextDose?.scheduledTime
+      ? new Date(nextDose.scheduledTime).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : null;
+
+    const response = await axios.post(
+      `${API_BASE_URL}/notifications/reminder/test`,
+      {
+        medicationName,
+        dosage,
+      },
+      { headers: authHeaders }
+    );
+
+    const details = scheduledTime
+      ? `Reminder sent for ${medicationName} (${dosage}) scheduled at ${scheduledTime}.`
+      : `Reminder sent for ${medicationName} (${dosage}).`;
+
+    return details || response.data?.message || "Reminder sent";
+  };
+
+  const checkMissedDoses = async () => {
+    const response = await axios.post(
+      `${API_BASE_URL}/schedule/check-missed`,
+      {},
+      { headers: authHeaders }
+    );
+
+    const missed = response.data?.missed ?? 0;
+    return missed === 0
+      ? "Checked missed doses. None found."
+      : response.data?.message || `Found ${missed} missed doses`;
+  };
+
+  const generateDailyReport = async () => {
+    const response = await axios.get(`${API_BASE_URL}/schedule/reports/daily`, {
+      headers: authHeaders,
+    });
+
+    const report = response.data?.report || {};
+
+    return {
+      type: "report",
+      title: response.data?.message || "Daily report generated",
+      generatedAt: new Date().toLocaleString(),
+      report: {
+        date: report.date || new Date().toDateString(),
+        summary: report.summary || "Your daily adherence report is ready.",
+        activeMedications: report.activeMedications ?? 0,
+        totalDoses: report.totalDoses ?? 0,
+        taken: report.taken ?? 0,
+        missed: report.missed ?? 0,
+        pending: report.pending ?? 0,
+        adherenceRate: report.adherenceRate || "0%",
+      },
+    };
   };
 
   const quickActions = [
@@ -1636,23 +378,16 @@ const MedicationSchedule = () => {
       description: "Create medication doses for today",
       icon: FaCalendarCheck,
       color: "bg-blue-500",
-      action: () => handleAction(
-        () => new Promise((res) => setTimeout(res, 500)),
-        "✅ Today's doses generated successfully!",
-        "❌ Failed to generate today's doses"
-      )
+      action: () =>
+        handleAction(1, generateTodayDoses, "Failed to generate today's doses"),
     },
     {
       id: 2,
-      title: "Send Test Reminder",
-      description: "Test notification system",
+      title: "Send Reminder",
+      description: "Send a medication reminder now",
       icon: FiBell,
       color: "bg-green-500",
-      action: () => handleAction(
-        () => new Promise((res) => setTimeout(res, 500)),
-        "✅ Test reminder sent!",
-        "❌ Failed to send test reminder"
-      )
+      action: () => handleAction(2, sendTestReminder, "Failed to send reminder"),
     },
     {
       id: 3,
@@ -1660,11 +395,7 @@ const MedicationSchedule = () => {
       description: "Scan for missed medications",
       icon: FiAlertTriangle,
       color: "bg-yellow-500",
-      action: () => handleAction(
-        () => new Promise((res) => setTimeout(res, 500)),
-        "✅ Checked missed doses. None found!",
-        "❌ Failed to check missed doses"
-      )
+      action: () => handleAction(3, checkMissedDoses, "Failed to check missed doses"),
     },
     {
       id: 4,
@@ -1672,17 +403,13 @@ const MedicationSchedule = () => {
       description: "Create adherence report",
       icon: FiBarChart2,
       color: "bg-purple-500",
-      action: () => handleAction(
-        () => new Promise((res) => setTimeout(res, 500)),
-        "✅ Daily report generated!",
-        "❌ Failed to generate report"
-      )
-    }
+      action: () => handleAction(4, generateDailyReport, "Failed to generate report"),
+    },
   ];
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="flex min-h-[40vh] items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-300">Loading medication dashboard...</p>
@@ -1692,12 +419,181 @@ const MedicationSchedule = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6">
-      {/* 🔥 Toaster */}
-      <Toaster position="top-right" reverseOrder={false} />
+    <div className="bg-gray-50 dark:bg-gray-900 p-4 md:p-6">
+      {actionModal ? (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 px-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="w-full max-w-xl overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-gray-800"
+          >
+            <div
+              className={`px-6 py-5 text-white ${
+                actionModal.type === "error"
+                  ? "bg-gradient-to-r from-red-600 to-rose-500"
+                  : "bg-gradient-to-r from-emerald-600 to-teal-500"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.2em] text-white/80">
+                    Schedule Action
+                  </p>
+                  <h2 className="mt-2 text-2xl font-bold">{actionModal.title}</h2>
+                </div>
+                <button
+                  onClick={() => setActionModal(null)}
+                  className="flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:bg-white/25 transition-colors"
+                  aria-label="Close notification"
+                >
+                  <FiX className="h-5 w-5" />
+                  <span>Close</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 md:p-8">
+              <div className="rounded-2xl bg-gray-50 p-5 dark:bg-gray-700/60">
+                <p className="text-lg text-gray-800 dark:text-gray-100">
+                  {actionModal.message}
+                </p>
+              </div>
+
+              {Array.isArray(actionModal.doses) && actionModal.doses.length > 0 ? (
+                <div className="mt-6 space-y-4 max-h-[420px] overflow-y-auto pr-1">
+                  {actionModal.doses.map((dose) => (
+                    <div
+                      key={dose._id}
+                      className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="rounded-2xl bg-blue-100 p-3 dark:bg-blue-900">
+                          <FiBell className="h-5 w-5 text-blue-600 dark:text-blue-300" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                            {dose.medicationId?.name || "Medication"}
+                          </h3>
+                          <p className="mt-1 text-xl text-gray-600 dark:text-gray-300">
+                            {dose.dosage || dose.medicationId?.dosage || ""}
+                          </p>
+
+                          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
+                            <div className="flex items-center text-gray-700 dark:text-gray-300">
+                              <FiClock className="mr-2 h-4 w-4" />
+                              <span>{formatDoseTime(dose.scheduledTime)}</span>
+                            </div>
+                            <div
+                              className={`rounded-full px-3 py-1 font-medium ${getDoseStatusClasses(dose)}`}
+                            >
+                              {getDoseStatusLabel(dose)} • {getDoseTimingText(dose.scheduledTime)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setActionModal(null)}
+                  className="rounded-xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-700 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
+                >
+                  Close Notification
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      ) : null}
+
+      {reportModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="w-full max-w-2xl rounded-3xl bg-white dark:bg-gray-800 shadow-2xl overflow-hidden"
+          >
+            <div className="bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-500 px-6 py-5 text-white">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.2em] text-blue-100">
+                    Medication Report
+                  </p>
+                  <h2 className="mt-2 text-2xl md:text-3xl font-bold">
+                    {reportModal.title}
+                  </h2>
+                  <p className="mt-2 text-sm text-blue-50">
+                    Generated on {reportModal.generatedAt}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setReportModal(null)}
+                  className="flex items-center gap-2 rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:bg-red-600 transition-colors"
+                  aria-label="Close report"
+                >
+                  <FiX className="h-5 w-5" />
+                  <span>Close</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 md:p-8">
+              <div className="rounded-2xl bg-blue-50 dark:bg-gray-700/60 p-5">
+                <p className="text-sm font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">
+                  Report Summary
+                </p>
+                <p className="mt-3 text-lg text-gray-800 dark:text-gray-100">
+                  {reportModal.report.summary}
+                </p>
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                  Report date: {reportModal.report.date}
+                </p>
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Adherence Rate</p>
+                  <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
+                    {reportModal.report.adherenceRate}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Active Medications</p>
+                  <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
+                    {reportModal.report.activeMedications}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Total Doses</p>
+                  <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
+                    {reportModal.report.totalDoses}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Taken / Missed / Pending</p>
+                  <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
+                    {reportModal.report.taken} / {reportModal.report.missed} / {reportModal.report.pending}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setReportModal(null)}
+                  className="rounded-xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white hover:bg-gray-700 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200 transition-colors"
+                >
+                  Close Report
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      ) : null}
 
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -1714,20 +610,24 @@ const MedicationSchedule = () => {
                 Monitor and manage all your medication schedules and automated services
               </p>
             </div>
-            <button
-              onClick={fetchDashboardData}
-              className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center transition-colors"
-            >
-              <FiRefreshCw className="mr-2" /> Refresh
-            </button>
+            <div className="flex items-center gap-3">
+              <PageDoodle type="schedule" className="hidden lg:block" />
+              <button
+                onClick={fetchDashboardData}
+                className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center transition-colors"
+              >
+                <FiRefreshCw className="mr-2" /> Refresh
+              </button>
+            </div>
           </div>
 
-          {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-blue-100 dark:bg-blue-900 rounded-xl shadow-sm p-6 flex justify-between items-center">
               <div>
                 <p className="text-sm text-gray-700 dark:text-gray-200">Active Medications</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{stats.activeMedications}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
+                  {stats.activeMedications}
+                </p>
               </div>
               <div className="bg-blue-500 p-3 rounded-full">
                 <FaPills className="w-6 h-6 text-white" />
@@ -1737,7 +637,9 @@ const MedicationSchedule = () => {
             <div className="bg-green-100 dark:bg-green-900 rounded-xl shadow-sm p-6 flex justify-between items-center">
               <div>
                 <p className="text-sm text-gray-700 dark:text-gray-200">Today's Doses</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{stats.todayDoses}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
+                  {stats.todayDoses}
+                </p>
               </div>
               <div className="bg-green-500 p-3 rounded-full">
                 <FiCheckCircle className="w-6 h-6 text-white" />
@@ -1747,7 +649,9 @@ const MedicationSchedule = () => {
             <div className="bg-purple-100 dark:bg-purple-900 rounded-xl shadow-sm p-6 flex justify-between items-center">
               <div>
                 <p className="text-sm text-gray-700 dark:text-gray-200">Adherence Rate</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">{stats.adherenceRate}%</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
+                  {stats.adherenceRate}%
+                </p>
               </div>
               <div className="bg-purple-500 p-3 rounded-full">
                 <FiTrendingUp className="w-6 h-6 text-white" />
@@ -1756,10 +660,86 @@ const MedicationSchedule = () => {
           </div>
         </div>
 
-        {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: Quick Actions */}
           <div className="lg:col-span-2 space-y-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-bold dark:text-white flex items-center">
+                    <FaCalendarCheck className="mr-3 text-green-600" /> Dose Calendar
+                  </h2>
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                    Days with at least one taken dose are marked with a check.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCalendarMonth((prev) => prev.subtract(1, "month"))}
+                    className="rounded-lg border border-gray-200 px-3 py-2 text-gray-700 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
+                    aria-label="Previous month"
+                  >
+                    <FiChevronLeft className="h-4 w-4" />
+                  </button>
+                  <div className="min-w-[140px] text-center text-sm font-semibold text-gray-800 dark:text-gray-100">
+                    {calendarMonth.format("MMMM YYYY")}
+                  </div>
+                  <button
+                    onClick={() => setCalendarMonth((prev) => prev.add(1, "month"))}
+                    className="rounded-lg border border-gray-200 px-3 py-2 text-gray-700 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
+                    aria-label="Next month"
+                  >
+                    <FiChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                {weekdayLabels.map((label) => (
+                  <div key={label} className="py-2">
+                    {label}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-2 grid grid-cols-7 gap-2">
+                {calendarDays.map((date) => {
+                  const dateKey = date.format("YYYY-MM-DD");
+                  const isCurrentMonth = date.month() === calendarMonth.month();
+                  const isToday = date.isSame(dayjs(), "day");
+                  const isTaken = takenDoseDays.has(dateKey);
+
+                  return (
+                    <div
+                      key={dateKey}
+                      className={`min-h-[78px] rounded-xl border p-2 transition ${
+                        isCurrentMonth
+                          ? "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900/40"
+                          : "border-gray-100 bg-gray-50/80 text-gray-400 dark:border-gray-800 dark:bg-gray-800/40 dark:text-gray-500"
+                      } ${isToday ? "ring-2 ring-blue-400/70" : ""}`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <span className="text-sm font-semibold">{date.date()}</span>
+                        {isTaken ? (
+                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200">
+                            <FiCheckCircle className="h-4 w-4" />
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="mt-4 text-[11px] font-medium">
+                        {isTaken ? (
+                          <span className="rounded-full bg-green-50 px-2 py-1 text-green-700 dark:bg-green-900/40 dark:text-green-200">
+                            Dose taken
+                          </span>
+                        ) : isCurrentMonth ? (
+                          <span className="text-gray-400 dark:text-gray-500">No taken dose</span>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
               <h2 className="text-xl font-bold dark:text-white mb-6 flex items-center">
                 <FiActivity className="mr-3 text-blue-600" /> Quick Actions
@@ -1767,13 +747,16 @@ const MedicationSchedule = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {quickActions.map((action) => {
                   const Icon = action.icon;
+                  const isBusy = actionLoadingId === action.id;
+
                   return (
                     <motion.button
                       key={action.id}
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
+                      whileHover={{ scale: isBusy ? 1 : 1.03 }}
+                      whileTap={{ scale: isBusy ? 1 : 0.97 }}
                       onClick={action.action}
-                      className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 text-left hover:border-blue-300 hover:shadow-md transition-all"
+                      disabled={isBusy}
+                      className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 text-left hover:border-blue-300 hover:shadow-md transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       <div className="flex items-center mb-3">
                         <div className={`${action.color} p-2 rounded-lg mr-3`}>
@@ -1781,68 +764,92 @@ const MedicationSchedule = () => {
                         </div>
                         <h3 className="font-bold dark:text-white text-gray-800">{action.title}</h3>
                       </div>
-                      <p className="text-sm dark:text-gray-300 text-gray-600">{action.description}</p>
+                      <p className="text-sm dark:text-gray-300 text-gray-600">
+                        {isBusy ? "Working..." : action.description}
+                      </p>
                     </motion.button>
                   );
                 })}
               </div>
             </div>
 
-            {/* Recent Activity */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
               <h2 className="text-xl font-bold dark:text-white mb-6 flex items-center">
                 <FiClock className="mr-3 text-blue-600" /> Recent Activity
               </h2>
               <div className="space-y-4">
                 {recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-center border-b border-gray-100 dark:border-gray-700 pb-4 last:border-0">
-                    <div className={`p-2 rounded-lg mr-4 ${
-                      activity.status === "success"
-                        ? "bg-green-100 dark:bg-green-700"
-                        : activity.status === "warning"
-                        ? "bg-yellow-100 dark:bg-yellow-700"
-                        : "bg-red-100 dark:bg-red-700"
-                    }`}>
-                      {activity.type === "reminder" && <FiBell className={`w-4 h-4 ${
+                  <div
+                    key={activity.id}
+                    className="flex items-center border-b border-gray-100 dark:border-gray-700 pb-4 last:border-0"
+                  >
+                    <div
+                      className={`p-2 rounded-lg mr-4 ${
                         activity.status === "success"
-                          ? "text-green-600 dark:text-green-100"
+                          ? "bg-green-100 dark:bg-green-700"
                           : activity.status === "warning"
-                          ? "text-yellow-600 dark:text-yellow-100"
-                          : "text-red-600 dark:text-red-100"
-                      }`} />}
-                      {activity.type === "dose" && <FaPills className={`w-4 h-4 ${
-                        activity.status === "success"
-                          ? "text-green-600 dark:text-green-100"
-                          : activity.status === "warning"
-                          ? "text-yellow-600 dark:text-yellow-100"
-                          : "text-red-600 dark:text-red-100"
-                      }`} />}
-                      {activity.type === "missed" && <FiAlertTriangle className={`w-4 h-4 ${
-                        activity.status === "success"
-                          ? "text-green-600 dark:text-green-100"
-                          : activity.status === "warning"
-                          ? "text-yellow-600 dark:text-yellow-100"
-                          : "text-red-600 dark:text-red-100"
-                      }`} />}
-                      {activity.type === "report" && <FiBarChart2 className={`w-4 h-4 ${
-                        activity.status === "success"
-                          ? "text-green-600 dark:text-green-100"
-                          : activity.status === "warning"
-                          ? "text-yellow-600 dark:text-yellow-100"
-                          : "text-red-600 dark:text-red-100"
-                      }`} />}
+                          ? "bg-yellow-100 dark:bg-yellow-700"
+                          : "bg-red-100 dark:bg-red-700"
+                      }`}
+                    >
+                      {activity.type === "reminder" && (
+                        <FiBell
+                          className={`w-4 h-4 ${
+                            activity.status === "success"
+                              ? "text-green-600 dark:text-green-100"
+                              : activity.status === "warning"
+                              ? "text-yellow-600 dark:text-yellow-100"
+                              : "text-red-600 dark:text-red-100"
+                          }`}
+                        />
+                      )}
+                      {activity.type === "dose" && (
+                        <FaPills
+                          className={`w-4 h-4 ${
+                            activity.status === "success"
+                              ? "text-green-600 dark:text-green-100"
+                              : activity.status === "warning"
+                              ? "text-yellow-600 dark:text-yellow-100"
+                              : "text-red-600 dark:text-red-100"
+                          }`}
+                        />
+                      )}
+                      {activity.type === "missed" && (
+                        <FiAlertTriangle
+                          className={`w-4 h-4 ${
+                            activity.status === "success"
+                              ? "text-green-600 dark:text-green-100"
+                              : activity.status === "warning"
+                              ? "text-yellow-600 dark:text-yellow-100"
+                              : "text-red-600 dark:text-red-100"
+                          }`}
+                        />
+                      )}
+                      {activity.type === "report" && (
+                        <FiBarChart2
+                          className={`w-4 h-4 ${
+                            activity.status === "success"
+                              ? "text-green-600 dark:text-green-100"
+                              : activity.status === "warning"
+                              ? "text-yellow-600 dark:text-yellow-100"
+                              : "text-red-600 dark:text-red-100"
+                          }`}
+                        />
+                      )}
                     </div>
                     <div className="flex-1">
                       <p className="text-gray-800 dark:text-white">{activity.message}</p>
                       <p className="text-sm text-gray-500 dark:text-gray-300">{activity.time}</p>
                     </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      activity.status === "success"
-                        ? "bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-100"
-                        : activity.status === "warning"
-                        ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-100"
-                        : "bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-100"
-                    }`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        activity.status === "success"
+                          ? "bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-100"
+                          : activity.status === "warning"
+                          ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-100"
+                          : "bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-100"
+                      }`}
+                    >
                       {activity.status}
                     </span>
                   </div>
@@ -1851,7 +858,6 @@ const MedicationSchedule = () => {
             </div>
           </div>
 
-          {/* Right Column: System Health */}
           <div className="space-y-8">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
               <h2 className="text-xl font-bold dark:text-white mb-6 flex items-center">
@@ -1859,12 +865,16 @@ const MedicationSchedule = () => {
               </h2>
               {Object.entries(systemHealth).map(([key, value]) => (
                 <div key={key} className="flex items-center justify-between mb-2">
-                  <span className="capitalize text-gray-700 dark:text-gray-200">{key.replace(/([A-Z])/g, " $1")}</span>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    value === "active" || value === "healthy"
-                      ? "bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-100"
-                      : "bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-100"
-                  }`}>
+                  <span className="capitalize text-gray-700 dark:text-gray-200">
+                    {key.replace(/([A-Z])/g, " $1")}
+                  </span>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      value === "active" || value === "healthy"
+                        ? "bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-100"
+                        : "bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-100"
+                    }`}
+                  >
                     {value.charAt(0).toUpperCase() + value.slice(1)}
                   </span>
                 </div>
@@ -1878,5 +888,3 @@ const MedicationSchedule = () => {
 };
 
 export default MedicationSchedule;
-
-

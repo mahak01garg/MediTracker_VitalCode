@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import PageDoodle from "../components/common/PageDoodle";
 
 export default function ChangePassword() {
   const [oldPassword, setOldPassword] = useState("");
@@ -33,9 +34,12 @@ export default function ChangePassword() {
 
   return (
     <div className="max-w-md mx-auto space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-        Change Password
-      </h1>
+      <div className="flex items-start justify-between">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          Change Password
+        </h1>
+        <PageDoodle type="security" className="hidden md:block" />
+      </div>
 
       <input
         type="password"
