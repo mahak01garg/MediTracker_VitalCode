@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // const jwt = require('jsonwebtoken');
 // const User = require('../models/User');
 // const logger = require('../utils/logger');
@@ -68,12 +69,16 @@
 //     firebaseAuth
 // };
 
+=======
+
+
+>>>>>>> 13ecc7878de3000beb44d5c2a41b83556df1f15c
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Doctor = require('../models/doctor.models.js');
 const admin = require("../config/firebaseAdmin.js");
 
-// Backend JWT authentication middleware
+
 const auth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -108,6 +113,7 @@ const auth = async (req, res, next) => {
     if (error.name === 'JsonWebTokenError') return res.status(401).json({ error: 'Invalid token' });
     if (error.name === 'TokenExpiredError') return res.status(401).json({ error: 'Token expired' });
     res.status(500).json({ error: 'Server error during authentication' });
+<<<<<<< HEAD
   }
 };
 
@@ -134,3 +140,31 @@ const firebaseAuth = async (req, res, next) => {
 };
 
 module.exports = { auth, firebaseAuth };
+=======
+  }
+};
+
+
+const firebaseAuth = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ message: "No token provided" });
+
+    const token = authHeader.split(" ")[1];
+    const decodedToken = await admin.auth().verifyIdToken(token);
+
+   
+    req.user = {
+      uid: decodedToken.uid,
+      email: decodedToken.email,
+      name: decodedToken.name
+    };
+    next();
+  } catch (err) {
+    console.log("Firebase verify error:", err.message);
+    res.status(401).json({ message: "Invalid or expired token" });
+  }
+};
+
+module.exports = { auth, firebaseAuth };
+>>>>>>> 13ecc7878de3000beb44d5c2a41b83556df1f15c
