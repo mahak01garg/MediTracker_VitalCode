@@ -64,18 +64,25 @@ EMAIL_FROM=noreply@meditracker.com
             }
 
             this.transporter = nodemailer.createTransport(config);
+            this.isConfigured = true;
 
-            // Test connection asynchronously
-            this.testConnection()
-                .then(success => {
-                    if (success) {
-                        this.isConfigured = true;
-                        console.log('✅ Email service initialized and ready');
-                    }
-                })
-                .catch(error => {
-                    console.error('❌ Email service test failed:', error.message);
-                });
+            const shouldVerifyOnStartup =
+                process.env.EMAIL_VERIFY_ON_STARTUP === 'true' ||
+                process.env.NODE_ENV === 'production';
+
+            if (shouldVerifyOnStartup) {
+                this.testConnection()
+                    .then(success => {
+                        this.isConfigured = success;
+                        if (success) {
+                            console.log('✅ Email service initialized and ready');
+                        }
+                    })
+                    .catch(error => {
+                        this.isConfigured = false;
+                        console.error('❌ Email service test failed:', error.message);
+                    });
+            }
 
         } catch (error) {
             console.error('❌ Email service initialization error:', error.message);

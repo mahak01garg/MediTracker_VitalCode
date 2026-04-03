@@ -16,14 +16,17 @@ class MissedDoseDetector {
         this.totalRemindersSent = 0;
         this.errors = [];
         this.scheduledTask = null;
+        this.reminderTask = null;
         this.lastCheckResult = null;
-        
-        // Initialize scheduled checks
-        this.init();
     }
 
     init() {
         try {
+            if (this.scheduledTask || this.reminderTask) {
+                logger.warn('MissedDoseDetector already initialized');
+                return;
+            }
+
             // Schedule to run every 15 minutes
             this.scheduledTask = cron.schedule('*/15 * * * *', async () => {
                 await this.runScheduledCheck();
@@ -399,8 +402,15 @@ class MissedDoseDetector {
     }
 
     stop() {
-        if (this.scheduledTask) {
-            this.scheduledTask.stop();
+        if (this.scheduledTask || this.reminderTask) {
+            if (this.scheduledTask) {
+                this.scheduledTask.stop();
+            }
+            if (this.reminderTask) {
+                this.reminderTask.stop();
+            }
+            this.scheduledTask = null;
+            this.reminderTask = null;
             logger.info('MissedDoseDetector stopped manually');
             return { success: true, message: 'Service stopped' };
         }
@@ -408,8 +418,8 @@ class MissedDoseDetector {
     }
 
     restart() {
-        if (this.scheduledTask) {
-            this.scheduledTask.stop();
+        if (this.scheduledTask || this.reminderTask) {
+            this.stop();
             this.init();
             logger.info('MissedDoseDetector restarted');
             return { success: true, message: 'Service restarted' };
