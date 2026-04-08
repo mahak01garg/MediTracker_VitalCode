@@ -56,32 +56,27 @@ const handleGoogleLogin = async () => {
     setFormError("");
     setLoading(true);
 
+    // 🔥 Step 1: Google provider
     const provider = new GoogleAuthProvider();
+
+    // 🔥 Step 2: Firebase popup login
     const result = await signInWithPopup(auth, provider);
 
-    const idToken = await result.user.getIdToken(true);
+    // 🔥 Step 3: Get user
+    const user = result.user;
 
-    // Send Firebase token to backend
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/google`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${idToken}`
-      }
-    });
+    console.log("Google User:", user);
 
-    const data = await response.json();
-    console.log("Backend response:", response.status, data);
+    // 🔥 Step 4: Save user (frontend state)
+    setUser(user);
 
-    if (!response.ok) throw new Error(data.message || "Backend Google auth failed");
-    setUser(data.user);
-    // Save backend JWT
-    localStorage.setItem('token', data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
-    // Request notification permission AFTER login
+    // 🔥 Step 5: Save in localStorage
+    localStorage.setItem("user", JSON.stringify(user));
+
+    // 🔥 Step 6: Notifications (optional)
     await requestNotificationPermission();
 
-    // navigate(from, { replace: true });
+    // 🔥 Step 7: Redirect
     navigate(from, { replace: true });
 
   } catch (err) {
