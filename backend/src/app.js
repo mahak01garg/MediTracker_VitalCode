@@ -60,7 +60,6 @@ const corsOptions = {
       return callback(null, true);
     }
 
-    // Allow non-browser tools (curl/postman) and same-origin server calls.
     if (!origin) return callback(null, true);
 
     if (isLocalOrigin(origin) || explicitAllowedOrigins.includes(origin)) {
@@ -71,7 +70,7 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
 };
 
 app.use(cors(corsOptions));
