@@ -62,9 +62,13 @@ const corsOptions = {
 
     if (!origin) return callback(null, true);
 
-    if (isLocalOrigin(origin) || explicitAllowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
+    if (
+  isLocalOrigin(origin) ||
+  explicitAllowedOrigins.includes(origin) ||
+  origin.includes('vercel.app')   // 🔥 THIS LINE
+) {
+  return callback(null, true);
+}
 
     return callback(new Error(`Not allowed by CORS: ${origin}`));
   },
