@@ -37,6 +37,10 @@ const app = express();
 
 const explicitAllowedOrigins = [
   process.env.FRONTEND_URL,
+  'https://medi-tracker-vital-code.vercel.app',
+  'https://medi-tracker-vital-code-mahak01gargs-projects.vercel.app',
+  'https://medi-tracker-vital-code-git-main-mahak01gargs-projects.vercel.app',
+  'https://medi-tracker-vital-code-ido0yo2ak-mahak01gargs-projects.vercel.app',
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:5174',
