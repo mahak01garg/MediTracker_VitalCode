@@ -131,6 +131,7 @@ VITE_FIREBASE_VAPID_KEY=your_vapid_key
 - `VITE_FIREBASE_MESSAGING_SENDER_ID`: Firebase messaging sender ID
 - `VITE_FIREBASE_APP_ID`: Firebase application ID
 - `VITE_FIREBASE_VAPID_KEY`: Firebase web push VAPID key
+- The Firebase messaging service worker is generated at build time from the `VITE_FIREBASE_*` values above
 
 ## Available Scripts
 
@@ -196,4 +197,4 @@ The current ESLint script uses legacy flags, and the repository may also have ES
 
 - When updating role-based navigation, verify `src/App.jsx`, `src/components/layout/Navbar.jsx`, and `src/components/layout/Sidebar.jsx` together
 - For authentication changes, start with `src/context/AuthContext.jsx` and `src/api/auth.js`
-- For push notification issues, check `src/firebase.js`, `src/hooks/useFCM.js`, and `public/firebase-messaging-sw.js`
+- For push notification issues, check `src/firebase.js`, `src/hooks/useFCM.js`, and the generated `dist/firebase-messaging-sw.js`
