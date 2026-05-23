@@ -10,7 +10,7 @@ import { FiMail, FiLock, FiAlertCircle } from 'react-icons/fi';
 import { requestNotificationPermission } from "../utils/notification";
 // import { GoogleLogin } from '@react-oauth/google';
 // import axios from 'axios';
-import { GoogleAuthProvider, getRedirectResult, signInWithPopup, signInWithRedirect } from "firebase/auth";
+import { GoogleAuthProvider, getRedirectResult, onAuthStateChanged, signInWithPopup, signInWithRedirect } from "firebase/auth";
 import { auth } from "../firebase";
 import PageDoodle from "../components/common/PageDoodle";
 
@@ -110,33 +110,74 @@ const handleGoogleLoginWithPopupArchive = async () => {
         localStorage.setItem('token', data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
 
-        await requestNotificationPermission();
         navigate(redirectPath, { replace: true });
+        requestNotificationPermission().catch((error) => {
+            console.warn("Notification setup after Google login failed:", error);
+        });
     };
 
     useEffect(() => {
+        let unsubscribe;
+
         const handleGoogleRedirectResult = async () => {
+            const pendingGoogleLogin = sessionStorage.getItem("googleLoginPending") === "true";
+
             try {
                 setFormError("");
-                const result = await getRedirectResult(auth);
+                if (pendingGoogleLogin) {
+                    setLoading(true);
+                }
 
-                if (!result?.user) {
+                const result = await getRedirectResult(auth);
+                const redirectPath = sessionStorage.getItem("googleLoginRedirectPath") || from;
+
+                if (result?.user) {
+                    sessionStorage.removeItem("googleLoginPending");
+                    sessionStorage.removeItem("googleLoginRedirectPath");
+                    await completeGoogleLogin(result.user, redirectPath);
                     return;
                 }
 
-                setLoading(true);
-                const redirectPath = sessionStorage.getItem("googleLoginRedirectPath") || from;
-                sessionStorage.removeItem("googleLoginRedirectPath");
-                await completeGoogleLogin(result.user, redirectPath);
+                if (!pendingGoogleLogin) {
+                    return;
+                }
+
+                unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+                    try {
+                        if (!firebaseUser) {
+                            setLoading(false);
+                            return;
+                        }
+
+                        sessionStorage.removeItem("googleLoginPending");
+                        sessionStorage.removeItem("googleLoginRedirectPath");
+                        unsubscribe?.();
+                        await completeGoogleLogin(firebaseUser, redirectPath);
+                    } catch (err) {
+                        console.error("Google auth state login error:", err);
+                        sessionStorage.removeItem("googleLoginPending");
+                        sessionStorage.removeItem("googleLoginRedirectPath");
+                        setFormError(err.message || "Google login failed");
+                        setLoading(false);
+                    }
+                });
             } catch (err) {
                 console.error("Google redirect login error:", err);
+                sessionStorage.removeItem("googleLoginPending");
+                sessionStorage.removeItem("googleLoginRedirectPath");
                 setFormError(err.message || "Google login failed");
-            } finally {
                 setLoading(false);
+            } finally {
+                if (!sessionStorage.getItem("googleLoginPending")) {
+                    setLoading(false);
+                }
             }
         };
 
         handleGoogleRedirectResult();
+        return () => {
+            unsubscribe?.();
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -146,10 +187,13 @@ const handleGoogleLoginWithPopupArchive = async () => {
             setLoading(true);
 
             const provider = new GoogleAuthProvider();
+            sessionStorage.setItem("googleLoginPending", "true");
             sessionStorage.setItem("googleLoginRedirectPath", from);
             await signInWithRedirect(auth, provider);
         } catch (err) {
             console.error("Google login error:", err);
+            sessionStorage.removeItem("googleLoginPending");
+            sessionStorage.removeItem("googleLoginRedirectPath");
             setFormError(err.message || "Google login failed");
             setLoading(false);
         }
