@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 //const { setUser } = useAuth();
@@ -10,7 +10,7 @@ import { FiMail, FiLock, FiAlertCircle } from 'react-icons/fi';
 import { requestNotificationPermission } from "../utils/notification";
 // import { GoogleLogin } from '@react-oauth/google';
 // import axios from 'axios';
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { GoogleAuthProvider, getRedirectResult, signInWithPopup, signInWithRedirect } from "firebase/auth";
 import { auth } from "../firebase";
 import PageDoodle from "../components/common/PageDoodle";
 
@@ -51,7 +51,7 @@ const Login = () => {
         }
     };
 
-const handleGoogleLogin = async () => {
+const handleGoogleLoginWithPopupArchive = async () => {
   try {
     setFormError("");
     setLoading(true);
@@ -87,6 +87,73 @@ const handleGoogleLogin = async () => {
   }
 };
 
+
+    const completeGoogleLogin = async (firebaseUser, redirectPath = from) => {
+        const idToken = await firebaseUser.getIdToken(true);
+
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/google`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${idToken}`,
+            },
+        });
+
+        const data = await response.json();
+        console.log("Backend response:", response.status, data);
+
+        if (!response.ok) {
+            throw new Error(data.message || "Backend Google auth failed");
+        }
+
+        setUser(data.user);
+        localStorage.setItem('token', data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        await requestNotificationPermission();
+        navigate(redirectPath, { replace: true });
+    };
+
+    useEffect(() => {
+        const handleGoogleRedirectResult = async () => {
+            try {
+                setFormError("");
+                const result = await getRedirectResult(auth);
+
+                if (!result?.user) {
+                    return;
+                }
+
+                setLoading(true);
+                const redirectPath = sessionStorage.getItem("googleLoginRedirectPath") || from;
+                sessionStorage.removeItem("googleLoginRedirectPath");
+                await completeGoogleLogin(result.user, redirectPath);
+            } catch (err) {
+                console.error("Google redirect login error:", err);
+                setFormError(err.message || "Google login failed");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        handleGoogleRedirectResult();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const handleGoogleLogin = async () => {
+        try {
+            setFormError("");
+            setLoading(true);
+
+            const provider = new GoogleAuthProvider();
+            sessionStorage.setItem("googleLoginRedirectPath", from);
+            await signInWithRedirect(auth, provider);
+        } catch (err) {
+            console.error("Google login error:", err);
+            setFormError(err.message || "Google login failed");
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-cyan-50 via-sky-50 to-emerald-50 px-4 py-8 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
