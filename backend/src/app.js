@@ -79,12 +79,9 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
-app.use((req, res, next) => {
-  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
-  next();
-});
 app.use(helmet({
-  contentSecurityPolicy: false // 🔥 disable CSP for API (important)
+  contentSecurityPolicy: false, // disable CSP for API
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }
 }));
 // Rate limiting
 const limiter = rateLimit({

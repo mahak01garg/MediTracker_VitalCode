@@ -132,6 +132,6 @@ router.put('/preferences', async (req, res) => {
     });
   }
 });
-router.post('/register-token',auth, NotificationController.registerToken);
+router.post('/register-token', NotificationController.registerToken);
 
 module.exports = router;
