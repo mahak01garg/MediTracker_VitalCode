@@ -30,11 +30,12 @@ class DoseNotificationManager {
     // ========================
     async sendUpcomingReminders() {
         const now = new Date();
+        const windowStart = new Date(now.getTime() - 2 * 60 * 1000);
         const windowEnd = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutes ahead
 
         const doses = await Dose.find({
             status: 'pending',
-            scheduledTime: { $gte: now, $lte: windowEnd },
+            scheduledTime: { $gte: windowStart, $lte: windowEnd },
             reminderSent: false
         }).populate('userId medicationId');
 
@@ -51,7 +52,7 @@ class DoseNotificationManager {
                     userName: user.name || user.email.split('@')[0],
                     medicationName: medication.name,
                     dosage: dose.dosage || medication.dosage,
-                    scheduledTime: dose.scheduledTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    scheduledTime: dose.scheduledTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: this.timezone }),
                     doseId: dose._id
                 };
 
@@ -110,7 +111,7 @@ class DoseNotificationManager {
                 const alertData = {
                     userName: user.name || user.email.split('@')[0],
                     medicationName: medication.name,
-                    missedTime: dose.scheduledTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    missedTime: dose.scheduledTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: this.timezone }),
                     doseId: dose._id
                 };
 

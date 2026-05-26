@@ -436,6 +436,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { medications, fetchMedications } = useMedications();
   const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata";
 
   const [streak, setStreak] = useState(0);
   const [upcomingDoses, setUpcomingDoses] = useState([]);
@@ -446,8 +447,13 @@ const Dashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        `${API_BASE_URL}/medications/upcoming/today`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        `${API_BASE_URL}/medications/upcoming/today?tz=${encodeURIComponent(timeZone)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "X-Timezone": timeZone
+          }
+        }
       );
 
       if (Array.isArray(res.data?.doses)) {
@@ -458,21 +464,26 @@ const Dashboard = () => {
     } catch (err) {
       console.error(err);
     }
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, timeZone]);
 
   const generateDosesForActiveMedications = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
         `${API_BASE_URL}/schedule/generate-today-doses`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { timeZone },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "X-Timezone": timeZone
+          }
+        }
       );
       await fetchTodayDoses();
     } catch (err) {
       console.error(err);
     }
-  }, [API_BASE_URL, fetchTodayDoses]);
+  }, [API_BASE_URL, fetchTodayDoses, timeZone]);
 
   const handleDoseAction = useCallback(async (doseId, action) => {
     const isReal = /^[0-9a-fA-F]{24}$/.test(doseId);

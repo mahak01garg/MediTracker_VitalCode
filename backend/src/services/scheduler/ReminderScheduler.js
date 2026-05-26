@@ -30,13 +30,16 @@ class ReminderScheduler {
     async checkUpcomingDoses() {
         try {
             const now = new Date();
+            const reminderStart = new Date(now.getTime() - 2 * 60000);
             const reminderWindow = new Date(now.getTime() + 5 * 60000); // 5 min ahead
 
             const doses = await Dose.find({
                 status: 'pending',
-                scheduledTime: { $lte: reminderWindow, $gte: now },
+                scheduledTime: { $lte: reminderWindow, $gte: reminderStart },
                 reminderSent: false
-            }).populate('userId', 'notificationPreferences email phone name');
+            })
+                .populate('userId', 'notificationPreferences email phone name')
+                .populate('medicationId', 'name dosage');
 
             for (const dose of doses) {
                 await this.sendReminder(dose);
@@ -78,7 +81,7 @@ class ReminderScheduler {
             userName: user.name,
             medicationName: dose.medicationId?.name || 'Medication',
             dosage: dose.medicationId?.dosage || '',
-            scheduledTime: dose.scheduledTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            scheduledTime: dose.scheduledTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' }),
             doseId: dose._id
         };
 
@@ -103,7 +106,7 @@ class ReminderScheduler {
         const alertData = {
             userName: user.name,
             medicationName: dose.medicationId?.name || 'Medication',
-            missedTime: dose.scheduledTime.toLocaleString(),
+            missedTime: dose.scheduledTime.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
             doseId: dose._id
         };
 

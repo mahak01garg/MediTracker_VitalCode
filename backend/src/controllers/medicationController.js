@@ -5,6 +5,14 @@ const scheduler = require('../services/scheduler/ReminderScheduler');
 const User = require('../models/User');
 const Reward = require('../models/Reward');
 const { deleteDosesForMedication } = require('../utils/doseUtils');
+const {
+    addCalendarDays,
+    getCalendarDayIndex,
+    getRequestTimeZone,
+    getZonedDayRange,
+    getZonedParts,
+    zonedTimeToUtc,
+} = require('../utils/timezone');
 
 exports.createMedication = async (req, res) => {
     try {
@@ -70,18 +78,14 @@ exports.getMedications = async (req, res) => {
         // Get upcoming doses for each medication
         const medicationsWithDoses = await Promise.all(
             medications.map(async (med) => {
-                const startOfToday = new Date();
-startOfToday.setHours(0, 0, 0, 0);
-
-const endOfToday = new Date();
-endOfToday.setHours(23, 59, 59, 999);
+                const { start: startOfToday, end: endOfToday } = getZonedDayRange(new Date(), getRequestTimeZone(req));
 
 const upcomingDoses = await Dose.find({
   medicationId: med._id,
   status: 'pending',
-  scheduledTime: {
+    scheduledTime: {
     $gte: startOfToday,
-    $lte: endOfToday
+    $lt: endOfToday
   }
 }).sort({ scheduledTime: 1 });
 
@@ -102,10 +106,7 @@ const upcomingDoses = await Dose.find({
 
 exports.getTodayDoses = async (req, res) => {
     try {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
+        const { start: today, end: tomorrow } = getZonedDayRange(new Date(), getRequestTimeZone(req));
 
         const doses = await Dose.find({
             userId: req.user.id,
@@ -199,13 +200,12 @@ exports.generateDoses = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Medication not found' });
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const timeZone = getRequestTimeZone(req);
+    const { start: today, end: tomorrow, parts } = getZonedDayRange(new Date(), timeZone);
     const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
     const fullDayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const todayKeys = [dayNames[today.getDay()], fullDayNames[today.getDay()]];
+    const todayIndex = getCalendarDayIndex(parts);
+    const todayKeys = [dayNames[todayIndex], fullDayNames[todayIndex]];
     
     const newDoses = [];
 
@@ -221,10 +221,9 @@ exports.generateDoses = async (req, res) => {
         continue;
       }
 
-      for (const time of schedule.times) {
+        for (const time of schedule.times) {
         const [hours, minutes] = time.split(':').map(Number);
-        const scheduledTime = new Date(today);
-        scheduledTime.setHours(hours, minutes, 0, 0);
+        const scheduledTime = zonedTimeToUtc(parts.year, parts.month - 1, parts.day, hours, minutes, timeZone);
 
         // Create any missing dose for today's schedule, even if the time
         // has already passed, so the user can still mark it taken/missed.
@@ -322,8 +321,7 @@ exports.getDoseHistory = async (req, res) => {
 // For line 20 in routes
 exports.getWeekDoses = async (req, res) => {
     try {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const { start: today } = getZonedDayRange(new Date(), 'Asia/Kolkata');
         
         const weekLater = new Date(today);
         weekLater.setDate(weekLater.getDate() + 7);
@@ -407,36 +405,45 @@ async function generateDosesForMedication(medication) {
     const doses = [];
     const startDate = new Date(medication.startDate);
     const endDate = medication.endDate ? new Date(medication.endDate) : null;
+    const timeZone = 'Asia/Kolkata';
 
     const MAX_DAYS = 30;
     const effectiveEndDate =
         endDate || new Date(startDate.getTime() + MAX_DAYS * 24 * 60 * 60 * 1000);
+    const startParts = getZonedParts(startDate, timeZone);
+    const totalDays = Math.ceil((effectiveEndDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)) + 1;
 
     medication.schedule.forEach(scheduleItem => {
 
         // ✅ Normalize day → array of day indexes
         let dayIndexes = [];
 
-        if (scheduleItem.day === 'everyday') {
+        const scheduleDays = Array.isArray(scheduleItem.day)
+            ? scheduleItem.day.map((day) => String(day).toLowerCase())
+            : [String(scheduleItem.day).toLowerCase()];
+
+        if (scheduleDays.includes('everyday')) {
             dayIndexes = [0, 1, 2, 3, 4, 5, 6];
         } else {
-            const days = Array.isArray(scheduleItem.day)
-                ? scheduleItem.day
-                : [scheduleItem.day];
-
-            dayIndexes = days
+            dayIndexes = scheduleDays
                 .map(d => getDayIndex(d))
                 .filter(index => index !== -1);
         }
 
         scheduleItem.times.forEach(time => {
             const [hours, minutes] = time.split(':').map(Number);
-            let currentDate = new Date(startDate);
 
-            while (currentDate <= effectiveEndDate) {
-                if (dayIndexes.includes(currentDate.getDay())) {
-                    const doseTime = new Date(currentDate);
-                    doseTime.setHours(hours, minutes, 0, 0);
+            for (let dayOffset = 0; dayOffset < totalDays; dayOffset++) {
+                const currentDate = addCalendarDays(startParts, dayOffset);
+                if (dayIndexes.includes(getCalendarDayIndex(currentDate))) {
+                    const doseTime = zonedTimeToUtc(
+                        currentDate.year,
+                        currentDate.month - 1,
+                        currentDate.day,
+                        hours,
+                        minutes,
+                        timeZone
+                    );
 
                     if (doseTime >= startDate) {
                         doses.push({
@@ -447,8 +454,6 @@ async function generateDosesForMedication(medication) {
                         });
                     }
                 }
-
-                currentDate.setDate(currentDate.getDate() + 1);
             }
         });
     });
@@ -465,6 +470,7 @@ async function generateDosesForMedication(medication) {
 
 function getDayIndex(day) {
     const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    const fullDays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
     if (Array.isArray(day)) {
         day = day[0]; // safety fallback
@@ -472,7 +478,9 @@ function getDayIndex(day) {
 
     if (typeof day !== 'string') return -1;
 
-    return days.indexOf(day.toLowerCase());
+    const normalizedDay = day.toLowerCase();
+    const shortIndex = days.indexOf(normalizedDay);
+    return shortIndex !== -1 ? shortIndex : fullDays.indexOf(normalizedDay);
 }
 
 async function updateStreak(userId) {

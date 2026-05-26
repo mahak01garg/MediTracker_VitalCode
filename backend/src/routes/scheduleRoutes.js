@@ -3,6 +3,12 @@ const express = require('express');
 const router = express.Router();
 const scheduleController = require('../controllers/scheduleController');
 const {auth,firebaseAuth} = require('../middleware/auth');
+const {
+  getCalendarDayIndex,
+  getRequestTimeZone,
+  getZonedDayRange,
+  zonedTimeToUtc,
+} = require('../utils/timezone');
 
 const normalizeScheduleDays = (dayValue) => {
   if (dayValue === 'everyday') {
@@ -20,7 +26,7 @@ const normalizeScheduleDays = (dayValue) => {
   return [];
 };
 
-const getTodayScheduleKeys = (date) => {
+const getTodayScheduleKeys = (dayIndex) => {
   const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
   const fullDayNames = [
     'sunday',
@@ -32,7 +38,6 @@ const getTodayScheduleKeys = (date) => {
     'saturday'
   ];
 
-  const dayIndex = date.getDay();
   return [dayNames[dayIndex], fullDayNames[dayIndex]];
 };
 
@@ -68,11 +73,9 @@ router.post('/generate-today-doses', auth, async (req, res) => {
     const Medication = require('../models/Medication');
     
     const userId = req.user._id;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const todayScheduleKeys = getTodayScheduleKeys(today);
+    const timeZone = getRequestTimeZone(req);
+    const { start: today, end: tomorrow, parts } = getZonedDayRange(new Date(), timeZone);
+    const todayScheduleKeys = getTodayScheduleKeys(getCalendarDayIndex(parts));
     
     // Get all active medications for the user
     const medications = await Medication.find({ 
@@ -99,8 +102,14 @@ router.post('/generate-today-doses', auth, async (req, res) => {
 
           for (const time of schedule.times) {
             const [hours, minutes] = time.split(':').map(Number);
-            const scheduledTime = new Date(today);
-            scheduledTime.setHours(hours, minutes, 0, 0);
+            const scheduledTime = zonedTimeToUtc(
+              parts.year,
+              parts.month - 1,
+              parts.day,
+              hours,
+              minutes,
+              timeZone
+            );
             
             // Create any missing dose for today, even if the scheduled time
             // has already passed, so the user can still log it as taken/missed.
@@ -205,10 +214,7 @@ router.get('/reports/daily', auth, async (req, res) => {
     const Medication = require('../models/Medication');
     
     const userId = req.user._id;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const { start: today, end: tomorrow } = getZonedDayRange(new Date(), getRequestTimeZone(req));
     
     // Get today's doses
     const doses = await Dose.find({

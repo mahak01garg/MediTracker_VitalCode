@@ -96,6 +96,29 @@ class PushNotificationService {
       data: { type: 'test' }
     });
   }
+  async sendReminder(userId, reminderData) {
+    return this.sendNotification(userId, {
+      title: 'Medication Reminder',
+      body: `${reminderData.medicationName || 'Medication'}${reminderData.dosage ? ` (${reminderData.dosage})` : ''} is due at ${reminderData.scheduledTime || 'now'}.`,
+      data: {
+        type: 'medication_reminder',
+        doseId: reminderData.doseId || '',
+        medicationName: reminderData.medicationName || 'Medication'
+      }
+    });
+  }
+
+  async sendMissedDose(userId, alertData) {
+    return this.sendNotification(userId, {
+      title: 'Missed Dose Alert',
+      body: `You missed ${alertData.medicationName || 'a medication'} scheduled at ${alertData.missedTime || 'earlier'}.`,
+      data: {
+        type: 'missed_dose',
+        doseId: alertData.doseId || '',
+        medicationName: alertData.medicationName || 'Medication'
+      }
+    });
+  }
 }
 
 
