@@ -281,7 +281,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useNotifications } from "../../context/NotificationContext";
 import { BsRobot } from "react-icons/bs";
-import { FiActivity, FiBell, FiCalendar, FiGift, FiHome, FiMapPin, FiMenu, FiMoon, FiSun, FiX } from "react-icons/fi";
+import { FiActivity, FiBell, FiCalendar, FiGift, FiHome, FiLogOut, FiMapPin, FiMenu, FiMoon, FiSun, FiUser, FiX } from "react-icons/fi";
 import { FaPills } from "react-icons/fa";
 
 const Navbar = () => {
@@ -297,6 +297,7 @@ const Navbar = () => {
   const isDoctor = user?.role === "doctor";
 
   const handleLogout = () => {
+    setIsMenuOpen(false);
     logout();
     navigate("/login");
   };
@@ -480,6 +481,35 @@ const Navbar = () => {
                 {item.label}
               </Link>
             ))}
+
+            {user && (
+              <div className="border-t border-slate-200 px-4 py-3 dark:border-slate-700">
+                <Link
+                  to="/profile"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center rounded-xl px-2 py-3 text-gray-700 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                >
+                  <FiUser className="mr-3 h-5 w-5" />
+                  Profile
+                </Link>
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="flex w-full items-center rounded-xl px-2 py-3 text-left text-gray-700 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                >
+                  {darkMode ? <FiSun className="mr-3 h-5 w-5 text-yellow-400" /> : <FiMoon className="mr-3 h-5 w-5" />}
+                  {darkMode ? "Light Mode" : "Dark Mode"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="flex w-full items-center rounded-xl px-2 py-3 text-left font-semibold text-red-600 transition hover:bg-red-50 dark:hover:bg-slate-800"
+                >
+                  <FiLogOut className="mr-3 h-5 w-5" />
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
