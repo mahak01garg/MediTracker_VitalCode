@@ -5,14 +5,21 @@ const { RewardService } = require('../services/reward');
 // Initialize the service
 const rewardService = new RewardService();
 const appointmentDiscountPercent = Number(process.env.APPOINTMENT_DISCOUNT_PERCENT || 20);
+const appointmentDiscountMaxPercent = Number(process.env.APPOINTMENT_DISCOUNT_MAX_PERCENT || 50);
 const appointmentDiscountPoints = Number(process.env.APPOINTMENT_DISCOUNT_POINTS || 50);
+
+const getAppointmentDiscountPercentByPoints = (points) => {
+    const currentPoints = Math.max(0, Number(points) || 0);
+    const extraPercent = Math.floor(Math.max(0, currentPoints - appointmentDiscountPoints) / 10);
+    return Math.min(appointmentDiscountPercent + extraPercent, appointmentDiscountMaxPercent);
+};
 
 const premiumRewards = [
     {
         id: 'appointment_discount_voucher',
         title: 'Doctor Appointment Discount',
         category: 'Appointments',
-        description: `Use reward points to get ${appointmentDiscountPercent}% off the next unpaid doctor appointment payment.`,
+        description: 'Use reward points to unlock a discount on your next unpaid doctor appointment payment.',
         pointsRequired: appointmentDiscountPoints,
         accessType: 'One appointment',
         durationDays: 30,
@@ -45,14 +52,20 @@ const buildPremiumRewardsPayload = async (userId, currentPoints) => {
             unlockedAt: record.redeemedAt,
             accessUntil,
             rewardId: record._id,
-            usedAt: record.metadata?.usedAt || null
+            usedAt: record.metadata?.usedAt || null,
+            discountPercent: record.metadata?.discountPercent
         });
     });
 
     const features = premiumRewards.map((feature) => {
         const unlock = unlockLookup.get(feature.id);
+        const featureDiscountPercent = unlock?.discountPercent ?? getAppointmentDiscountPercentByPoints(currentPoints);
+
         return {
             ...feature,
+            discountPercent: featureDiscountPercent,
+            benefit: `${featureDiscountPercent}% appointment fee discount`,
+            description: feature.description,
             isUnlocked: Boolean(unlock?.isUnlocked),
             unlockedAt: unlock?.unlockedAt || null,
             accessUntil: unlock?.accessUntil || null,
@@ -323,6 +336,8 @@ exports.unlockPremiumReward = async (req, res) => {
                 ? new Date(Date.now() + feature.durationDays * 24 * 60 * 60 * 1000)
                 : null;
 
+        const discountPercent = getAppointmentDiscountPercentByPoints(user.rewardPoints || 0);
+
         user.rewardPoints = (user.rewardPoints || 0) - feature.pointsRequired;
         await user.save();
 
@@ -338,7 +353,7 @@ exports.unlockPremiumReward = async (req, res) => {
                 premiumFeatureName: feature.title,
                 accessUntil,
                 accessType: feature.accessType,
-                discountPercent: feature.discountPercent
+                discountPercent
             }
         });
 
