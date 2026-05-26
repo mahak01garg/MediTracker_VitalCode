@@ -107,7 +107,12 @@ const Appointments = () => {
 
       {/* Quick Info */}
       <div className={`grid grid-cols-1 ${isDoctor ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-6`}>
-        <div className="bg-white/90 dark:bg-gray-800 rounded-2xl p-6 border border-blue-100 dark:border-gray-700 shadow-sm">
+        <button
+          type="button"
+          onClick={() => isDoctor && navigate('/appointments/manage-slots')}
+          className="bg-white/90 dark:bg-gray-800 rounded-2xl p-6 border border-blue-100 dark:border-gray-700 shadow-sm text-left transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-default"
+          disabled={!isDoctor}
+        >
           <div className="flex items-center mb-3">
             <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white mr-4">
               <GiStethoscope className="w-6 h-6" />
@@ -117,9 +122,14 @@ const Appointments = () => {
           <p className="text-sm text-gray-600 dark:text-gray-400">
             {isDoctor ? 'Publish the free slots patients can book.' : 'Browse and select from verified medical professionals'}
           </p>
-        </div>
+        </button>
 
-        <div className="bg-white/90 dark:bg-gray-800 rounded-2xl p-6 border border-purple-100 dark:border-gray-700 shadow-sm">
+        <button
+          type="button"
+          onClick={() => isDoctor && navigate('/appointments/my-appointments')}
+          className="bg-white/90 dark:bg-gray-800 rounded-2xl p-6 border border-purple-100 dark:border-gray-700 shadow-sm text-left transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-default"
+          disabled={!isDoctor}
+        >
           <div className="flex items-center mb-3">
             <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white mr-4">
               <FiCalendar className="w-6 h-6" />
@@ -129,7 +139,7 @@ const Appointments = () => {
           <p className="text-sm text-gray-600 dark:text-gray-400">
             {isDoctor ? 'See who booked with you and when.' : 'Book appointments at your convenience with flexible slots'}
           </p>
-        </div>
+        </button>
 
         {!isDoctor && (
           <div className="bg-white/90 dark:bg-gray-800 rounded-2xl p-6 border border-green-100 dark:border-gray-700 shadow-sm">
