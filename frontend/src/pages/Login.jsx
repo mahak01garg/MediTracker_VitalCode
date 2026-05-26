@@ -268,6 +268,7 @@ const handleGoogleLoginWithPopupArchive = async () => {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
+                                autoComplete="username"
                                 icon={<FiMail className="w-5 h-5 text-gray-400" />}
                             />
 
@@ -278,6 +279,7 @@ const handleGoogleLoginWithPopupArchive = async () => {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
+                                autoComplete="current-password"
                                 icon={<FiLock className="w-5 h-5 text-gray-400" />}
                             />
 

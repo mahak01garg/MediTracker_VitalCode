@@ -14,6 +14,18 @@ const { uploadsDir } = require('../middleware/multer.middleware');
 
 //const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+const getUserTokenExpiry = () => {
+    const configuredExpiry = process.env.JWT_EXPIRES_IN || process.env.JWT_REFRESH_EXPIRES_IN;
+    const normalizedExpiry = String(configuredExpiry || '7d').trim().replace(/^['"]|['"]$/g, '');
+    return normalizedExpiry || '7d';
+};
+
+const signUserToken = (userId) => jwt.sign(
+    { userId },
+    process.env.JWT_SECRET,
+    { expiresIn: getUserTokenExpiry() }
+);
+
 const buildFileUrl = (req, filePath) => {
     if (!filePath) return '';
     if (/^https?:\/\//i.test(filePath)) return filePath;
@@ -177,11 +189,7 @@ exports.register = async (req, res) => {
             .catch(err => console.error('❌ Welcome email failed:', err.message));
 
         // Generate token
-        const token = jwt.sign(
-            { userId: user._id },
-            process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
-        );
+        const token = signUserToken(user._id);
 
         res.status(201).json({
             success: true,
@@ -334,11 +342,7 @@ exports.login = async (req, res) => {
 
         // Generate JWT token
         console.log('Generating token...');
-        const token = jwt.sign(
-            { userId: user._id },
-            process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
-        );
+        const token = signUserToken(user._id);
 
         console.log('✅ Login successful for:', normalizedEmail);
         
@@ -398,11 +402,7 @@ exports.googleAuth = async (req, res) => {
       }
     }
 
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
-    );
+    const token = signUserToken(user._id);
 
     res.status(200).json({
       message: "Google authentication successful",
