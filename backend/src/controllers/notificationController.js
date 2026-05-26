@@ -4,7 +4,7 @@ const User = require('../models/User');
 class NotificationController {
   static async registerToken(req, res) {
     try {
-      const { fcmToken } = req.body;
+      const fcmToken = req.body.fcmToken || req.body.token;
       const userId = req.userId;
 
       console.log("Register token body:", req.body);

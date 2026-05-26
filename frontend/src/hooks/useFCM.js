@@ -1,16 +1,30 @@
 import { getFCMToken } from "../firebase";
-import { auth } from "../firebase";
+
+const getApiUrl = () => {
+  const configured =
+    import.meta.env.VITE_API_URL ||
+    import.meta.env.VITE_API_BASE_URL ||
+    "/api";
+
+  return configured.replace(/\/$/, "");
+};
 
 export const registerFCM = async () => {
   const token = await getFCMToken();
-  const idToken = await auth.currentUser.getIdToken();
+  const authToken = localStorage.getItem("token");
 
-  await fetch(`${import.meta.env.VITE_API_URL}/notifications/register-token`, {
+  if (!token || !authToken) {
+    return null;
+  }
+
+  const response = await fetch(`${getApiUrl()}/notifications/register-token`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${idToken}`,
+      Authorization: `Bearer ${authToken}`,
     },
-    body: JSON.stringify({ token }),
+    body: JSON.stringify({ fcmToken: token }),
   });
+
+  return response.json();
 };

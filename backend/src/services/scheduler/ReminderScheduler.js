@@ -42,9 +42,11 @@ class ReminderScheduler {
                 .populate('medicationId', 'name dosage');
 
             for (const dose of doses) {
-                await this.sendReminder(dose);
-                dose.reminderSent = true;
-                await dose.save();
+                const sent = await this.sendReminder(dose);
+                if (sent) {
+                    dose.reminderSent = true;
+                    await dose.save();
+                }
             }
         } catch (err) {
             console.error('Error checking upcoming doses:', err);
@@ -86,16 +88,25 @@ class ReminderScheduler {
         };
 
         try {
+            let sent = false;
+
             if (prefs.email !== false && user.email) {
-                await notificationService.sendReminderEmail(user.email, reminderData);
+                const result = await notificationService.sendReminderEmail(user.email, reminderData);
+                sent = sent || result?.success === true;
             }
             if (prefs.push !== false) {
-                await pushNotification.sendReminder(user._id, reminderData);
+                const result = await pushNotification.sendReminder(user._id, reminderData);
+                sent = sent || result?.success === true || result?.successCount > 0;
             }
             // SMS logic can be added here if needed
-            await this.logReminder(dose, 'upcoming');
+            if (sent) {
+                await this.logReminder(dose, 'upcoming');
+            }
+
+            return sent;
         } catch (err) {
             console.error('Failed to send reminder:', err);
+            return false;
         }
     }
 

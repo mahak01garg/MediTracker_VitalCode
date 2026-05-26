@@ -1,5 +1,14 @@
 import { getFCMToken } from "../firebase";
 
+const getApiUrl = () => {
+  const configured =
+    import.meta.env.VITE_API_URL ||
+    import.meta.env.VITE_API_BASE_URL ||
+    "/api";
+
+  return configured.replace(/\/$/, "");
+};
+
 export const requestNotificationPermission = async () => {
   try {
     const permission = await Notification.requestPermission();
@@ -20,7 +29,7 @@ export const requestNotificationPermission = async () => {
       }
 
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || "http://localhost:5000/api"}/notifications/register-token`,
+        `${getApiUrl()}/notifications/register-token`,
         {
           method: "POST",
           headers: {

@@ -25,7 +25,14 @@ class PushNotificationService {
 
       if (!user || !Array.isArray(user.fcmTokens) || user.fcmTokens.length === 0) {
         logger.info(`No FCM tokens for user ${userId}`);
-        return { sent: false };
+        return {
+          success: false,
+          sent: false,
+          successCount: 0,
+          failureCount: 0,
+          deviceCount: 0,
+          message: 'No FCM tokens registered for user'
+        };
       }
 
       // 🔐 Ensure data payload values are strings
@@ -81,12 +88,21 @@ class PushNotificationService {
         await user.save();
       }
 
-      return response;
+      return {
+        ...response,
+        success: response.successCount > 0,
+        sent: response.successCount > 0,
+        deviceCount: user.fcmTokens.length
+      };
 
     } catch (error) {
       logger.error('Push notification error:', error);
       throw error;
     }
+  }
+
+  async sendToUser(userId, notification) {
+    return this.sendNotification(userId, notification);
   }
 
   async sendTestNotification(userId) {

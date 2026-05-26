@@ -67,8 +67,8 @@ class DoseNotificationManager {
                 // Push
                 if (user.notificationPreferences?.push !== false) {
                     try {
-                        await PushNotification.sendReminder(user._id, reminderData);
-                        success = true;
+                        const result = await PushNotification.sendReminder(user._id, reminderData);
+                        success = success || result?.success === true || result?.successCount > 0;
                     } catch (err) {
                         logger.error('Push notification failed for user', user._id, err);
                     }
@@ -126,8 +126,8 @@ class DoseNotificationManager {
                 // Push
                 if (user.notificationPreferences?.push !== false) {
                     try {
-                        await PushNotification.sendMissedDose(user._id, alertData);
-                        success = true;
+                        const result = await PushNotification.sendMissedDose(user._id, alertData);
+                        success = success || result?.success === true || result?.successCount > 0;
                     } catch (err) {
                         logger.error('Push notification failed for missed dose for user', user._id, err);
                     }
