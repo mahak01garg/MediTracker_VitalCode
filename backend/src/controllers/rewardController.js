@@ -10,7 +10,7 @@ const appointmentDiscountPoints = Number(process.env.APPOINTMENT_DISCOUNT_POINTS
 
 const getAppointmentDiscountPercentByPoints = (points) => {
     const currentPoints = Math.max(0, Number(points) || 0);
-    const extraPercent = Math.floor(Math.max(0, currentPoints - appointmentDiscountPoints) / 10);
+    const extraPercent = Math.floor(Math.max(0, currentPoints - appointmentDiscountPoints) / 10) * 2;
     return Math.min(appointmentDiscountPercent + extraPercent, appointmentDiscountMaxPercent);
 };
 
@@ -19,7 +19,7 @@ const premiumRewards = [
         id: 'appointment_discount_voucher',
         title: 'Doctor Appointment Discount',
         category: 'Appointments',
-        description: 'Use reward points to unlock a discount on your next unpaid doctor appointment payment.',
+        description: `Use reward points to unlock a discount on your next unpaid doctor appointment payment. Starts at ${appointmentDiscountPercent}% and increases with higher point balance up to ${appointmentDiscountMaxPercent}%`,
         pointsRequired: appointmentDiscountPoints,
         accessType: 'One appointment',
         durationDays: 30,
