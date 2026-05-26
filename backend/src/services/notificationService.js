@@ -165,7 +165,7 @@ class NotificationService {
     );
 
     return {
-      success: result.success || true,
+      success: result.success,
       message: 'Test email sent successfully',
       to: user.email
     };
@@ -194,7 +194,7 @@ class NotificationService {
       );
 
       return {
-        success: result.success || true,
+        success: result.success,
         message: 'Test push notification sent',
         deviceCount: result.deviceCount || 0
       };

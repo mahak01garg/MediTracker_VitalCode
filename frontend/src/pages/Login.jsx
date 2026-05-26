@@ -97,7 +97,16 @@ const handleGoogleLoginWithPopupArchive = async () => {
 
   } catch (err) {
     console.error("❌ Google login error:", err);
-    setFormError(err.message || "Google login failed");
+    const popupCanceled = err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request';
+    const popupBlocked = err?.code === 'auth/popup-blocked';
+
+    if (popupCanceled) {
+      setFormError('Google sign-in was cancelled. Please try again.');
+    } else if (popupBlocked) {
+      setFormError('Google sign-in popup was blocked. Please allow popups and try again.');
+    } else {
+      setFormError(err.message || "Google login failed");
+    }
   } finally {
     setLoading(false);
   }
@@ -210,7 +219,12 @@ const handleGoogleLoginWithPopupArchive = async () => {
             console.error("Google login error:", err);
             sessionStorage.removeItem("googleLoginPending");
             sessionStorage.removeItem("googleLoginRedirectPath");
-            setFormError(err.message || "Google login failed");
+            const popupBlocked = err?.code === 'auth/popup-blocked';
+            if (popupBlocked) {
+                setFormError('Google sign-in popup was blocked. Please allow popups and try again.');
+            } else {
+                setFormError(err.message || "Google login failed");
+            }
             setLoading(false);
         }
     };

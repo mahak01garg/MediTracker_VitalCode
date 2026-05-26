@@ -127,33 +127,32 @@ EMAIL_FROM=noreply@meditracker.com
     async sendEmail(to, subject, html, text = '') {
         try {
             const emailMock = process.env.EMAIL_MOCK === 'true';
-            
-            // If in mock mode or not configured, log instead of sending
-            if (emailMock || !this.transporter || !this.isConfigured) {
-                const recipients = Array.isArray(to) ? to.join(', ') : to;
-                const emailType = emailMock ? 'MOCK' : 'NOT CONFIGURED';
-                
-                console.log(`\n📧 [${emailType} EMAIL]`);
+            const recipients = Array.isArray(to) ? to.join(', ') : to;
+
+            // If in mock mode, log and return a successful mock response
+            if (emailMock) {
+                console.log(`\n📧 [MOCK EMAIL]`);
                 console.log(`   To: ${recipients}`);
                 console.log(`   Subject: "${subject}"`);
                 console.log(`   Preview: ${this.htmlToText(html).substring(0, 80)}...`);
                 console.log(`   Time: ${new Date().toLocaleString()}`);
-                
-                if (emailMock) {
-                    console.log(`   ℹ️  Set EMAIL_MOCK=false to send real emails`);
-                } else {
-                    console.log(`   ℹ️  Configure EMAIL_USER and EMAIL_PASSWORD in .env to send emails`);
-                }
-                
-                // Return mock success response
+                console.log(`   ℹ️  Mock email mode enabled. Set EMAIL_MOCK=false to send real emails.`);
+
                 return {
-                    success: emailMock,
+                    success: true,
                     mock: true,
                     messageId: `mock-${Date.now()}`,
-                    message: `Email logged (${emailType.toLowerCase()} mode)`,
+                    message: 'Email logged in mock mode',
                     recipient: recipients,
                     subject: subject
                 };
+            }
+
+            // If the transporter is not ready, throw so callers can handle the failure.
+            if (!this.transporter || !this.isConfigured) {
+                const errorMessage = 'Email service is not configured. Check EMAIL_USER, EMAIL_PASSWORD, and EMAIL_MOCK settings.';
+                console.error('❌ Failed to send email:', errorMessage);
+                throw new Error(errorMessage);
             }
 
             // Prepare from address
