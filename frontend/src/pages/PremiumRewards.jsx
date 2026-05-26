@@ -14,19 +14,6 @@ import api from '../api/api';
 
 const APPOINTMENT_DISCOUNT_ID = 'appointment_discount_voucher';
 
-const fallbackFeatures = [
-  {
-    id: APPOINTMENT_DISCOUNT_ID,
-    title: 'Doctor Appointment Discount',
-    category: 'Appointments',
-    description: 'Use reward points to get 20% off the next unpaid doctor appointment payment.',
-    pointsRequired: 50,
-    accessType: 'One appointment',
-    benefit: '20% appointment fee discount',
-    discountPercent: 20,
-  },
-];
-
 const formatAccessUntil = (value) => {
   if (!value) return 'Unlocked';
   return `Until ${new Date(value).toLocaleDateString(undefined, {
@@ -57,17 +44,33 @@ const PremiumRewards = () => {
 
   const currentPoints = premiumData?.currentPoints ?? pointsData?.totalPoints ?? 0;
   const discountFeature = useMemo(() => {
-    const source = premiumData?.features?.length ? premiumData.features : fallbackFeatures;
-    const feature = source.find((item) => item.id === APPOINTMENT_DISCOUNT_ID) || fallbackFeatures[0];
+    const feature = premiumData?.features?.find((item) => item.id === APPOINTMENT_DISCOUNT_ID);
 
     return {
-      ...feature,
-      isUnlocked: Boolean(feature.isUnlocked),
-      canUnlock: feature.canUnlock ?? currentPoints >= feature.pointsRequired,
-      pointsShort: feature.pointsShort ?? Math.max(feature.pointsRequired - currentPoints, 0),
-      discountPercent: feature.discountPercent || 20,
+      id: APPOINTMENT_DISCOUNT_ID,
+      title: feature?.title || 'Doctor Appointment Discount',
+      category: feature?.category || 'Appointments',
+      description: feature?.description || 'Load the current appointment discount from the rewards API.',
+      pointsRequired: feature?.pointsRequired,
+      accessType: feature?.accessType || 'One appointment',
+      benefit: feature?.benefit || 'Appointment fee discount',
+      discountPercent: feature?.discountPercent,
+      isUnlocked: Boolean(feature?.isUnlocked),
+      unlockedAt: feature?.unlockedAt || null,
+      accessUntil: feature?.accessUntil || null,
+      canUnlock: Boolean(feature?.canUnlock),
+      pointsShort: feature?.pointsShort ?? 0,
     };
-  }, [currentPoints, premiumData]);
+  }, [premiumData]);
+
+  const discountLabel =
+    typeof discountFeature.discountPercent === 'number'
+      ? `${discountFeature.discountPercent}%`
+      : '--';
+  const pointsRequiredLabel =
+    typeof discountFeature.pointsRequired === 'number'
+      ? discountFeature.pointsRequired
+      : '--';
 
   const unpaidAppointments = appointments.filter((appointment) => appointment.paymentStatus !== 'paid');
 
@@ -167,7 +170,7 @@ const PremiumRewards = () => {
           <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">Discount</p>
           <div className="mt-2 flex items-center text-3xl font-extrabold text-blue-600">
             <FiTag className="mr-3 h-7 w-7" />
-            {discountFeature.discountPercent}%
+            {discountLabel}
           </div>
         </div>
 
@@ -224,7 +227,7 @@ const PremiumRewards = () => {
           <div className="mt-5 grid grid-cols-1 gap-3 text-sm text-gray-700 dark:text-gray-300 md:grid-cols-3">
             <div className="rounded-xl bg-slate-50 p-4 dark:bg-gray-900">
               <span className="block text-gray-500 dark:text-gray-400">Points needed</span>
-              <span className="mt-1 block text-2xl font-extrabold text-emerald-600">{discountFeature.pointsRequired}</span>
+              <span className="mt-1 block text-2xl font-extrabold text-emerald-600">{pointsRequiredLabel}</span>
             </div>
             <div className="rounded-xl bg-slate-50 p-4 dark:bg-gray-900">
               <span className="block text-gray-500 dark:text-gray-400">Status</span>

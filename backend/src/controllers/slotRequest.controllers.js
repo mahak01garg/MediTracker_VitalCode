@@ -70,6 +70,12 @@ const findActiveAppointmentDiscount = async (patientId) => {
   }).sort({ redeemedAt: 1 });
 };
 
+const getRewardDiscountPercent = (reward) => {
+  const discountPercent = Number(reward?.metadata?.discountPercent || 0);
+  if (!Number.isFinite(discountPercent)) return 0;
+  return Math.min(Math.max(discountPercent, 0), 100);
+};
+
 const requestSlot = async (req, res) => {
   try {
     console.log('Received slot request:', req.body);
@@ -202,7 +208,7 @@ const createPaymentOrder = async (req, res) => {
     }
 
     const discountReward = await findActiveAppointmentDiscount(patientId);
-    const discountPercent = discountReward ? 20 : 0;
+    const discountPercent = getRewardDiscountPercent(discountReward);
     const originalFee = Number(request.fee || 0);
     const discountAmount = Math.round((originalFee * discountPercent) / 100);
     const payableFee = Math.max(originalFee - discountAmount, 0);

@@ -4,18 +4,20 @@ const { RewardService } = require('../services/reward');
 
 // Initialize the service
 const rewardService = new RewardService();
+const appointmentDiscountPercent = Number(process.env.APPOINTMENT_DISCOUNT_PERCENT || 20);
+const appointmentDiscountPoints = Number(process.env.APPOINTMENT_DISCOUNT_POINTS || 50);
 
 const premiumRewards = [
     {
         id: 'appointment_discount_voucher',
         title: 'Doctor Appointment Discount',
         category: 'Appointments',
-        description: 'Use reward points to get 20% off the next unpaid doctor appointment payment.',
-        pointsRequired: 50,
+        description: `Use reward points to get ${appointmentDiscountPercent}% off the next unpaid doctor appointment payment.`,
+        pointsRequired: appointmentDiscountPoints,
         accessType: 'One appointment',
         durationDays: 30,
-        benefit: '20% appointment fee discount',
-        discountPercent: 20
+        benefit: `${appointmentDiscountPercent}% appointment fee discount`,
+        discountPercent: appointmentDiscountPercent
     }
 ];
 
@@ -335,7 +337,8 @@ exports.unlockPremiumReward = async (req, res) => {
                 premiumFeatureId: feature.id,
                 premiumFeatureName: feature.title,
                 accessUntil,
-                accessType: feature.accessType
+                accessType: feature.accessType,
+                discountPercent: feature.discountPercent
             }
         });
 
