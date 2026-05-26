@@ -44,6 +44,9 @@ const rewardSchema = new mongoose.Schema({
     premiumFeatureName: String,
     accessUntil: Date,
     accessType: String,
+    discountPercent: Number,
+    usedAppointmentRequestId: mongoose.Schema.Types.ObjectId,
+    usedAt: Date,
     takenAt: Date,
     entryType: String,
     medicationName: String
