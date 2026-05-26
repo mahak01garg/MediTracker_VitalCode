@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import PageDoodle from "../components/common/PageDoodle";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -19,7 +21,7 @@ const ForgotPassword = () => {
 
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/user/forgot-password`,
+        `${API_URL}/auth/forgot-password`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -48,7 +50,7 @@ const ForgotPassword = () => {
 
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/user/reset-password`,
+        `${API_URL}/auth/reset-password`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -76,8 +78,8 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-50 to-purple-50 p-6">
-      <div className="max-w-md w-full bg-white shadow-lg rounded-2xl p-8 relative overflow-hidden">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-6 sm:p-6">
+      <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white p-5 shadow-lg sm:p-8">
         <PageDoodle type="security" className="absolute right-4 top-4 hidden lg:block" />
         <h2 className="text-2xl font-bold text-center mb-6 text-gray-900">Forgot Password</h2>
 
@@ -96,6 +98,7 @@ const ForgotPassword = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
               className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
@@ -116,6 +119,8 @@ const ForgotPassword = () => {
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
               required
+              inputMode="numeric"
+              autoComplete="one-time-code"
               className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <input
@@ -124,6 +129,7 @@ const ForgotPassword = () => {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
+              autoComplete="new-password"
               className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button

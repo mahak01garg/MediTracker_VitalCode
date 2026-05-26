@@ -70,16 +70,18 @@ const Layout = ({ children }) => {
     <Navbar />
 
     <div className="flex flex-1">
-      <Sidebar />
+      <div className="hidden md:block">
+        <Sidebar />
+      </div>
 
       <main
         className={`
-          flex-1 p-4 md:p-6 lg:p-8
+          min-w-0 flex-1 p-3 sm:p-4 md:p-6 lg:p-8
           text-gray-900 dark:text-gray-100
           bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.08),_transparent_40%),radial-gradient(circle_at_80%_20%,_rgba(16,185,129,0.08),_transparent_35%)]
         `}
       >
-        <div className="max-w-7xl mx-auto">
+        <div className="mx-auto w-full max-w-7xl">
           {children}
         </div>
       </main>

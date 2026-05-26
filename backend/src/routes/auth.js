@@ -11,6 +11,7 @@ router.post('/login', authController.login);
 router.post('/google',firebaseAuth, authController.googleAuth);
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
+router.post('/resend-otp', authController.resendOtp);
 
 // Protected routes
 router.get('/profile', auth, authController.getProfile);
