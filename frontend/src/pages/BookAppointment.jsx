@@ -121,6 +121,22 @@ const BookAppointment = () => {
           netbanking: true,
           wallet: true,
         },
+        display: {
+          blocks: {
+            upiBlock: {
+              name: 'Pay using UPI',
+              instruments: [
+                {
+                  method: 'upi',
+                },
+              ],
+            },
+          },
+          sequence: ['block.upiBlock', 'upi', 'card', 'netbanking', 'wallet'],
+          preferences: {
+            show_default_blocks: true,
+          },
+        },
         prefill: {
           name: currentUser?.name || '',
           email: currentUser?.email || '',
