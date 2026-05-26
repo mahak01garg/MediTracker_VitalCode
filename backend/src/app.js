@@ -53,27 +53,39 @@ const explicitAllowedOrigins = [
 const isLocalOrigin = (origin = '') =>
   /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?$/i.test(origin);
 
+const isAllowedProductionOrigin = (origin = '') => {
+  if (!origin) return false;
+  const normalized = origin.toLowerCase();
+  return (
+    explicitAllowedOrigins.includes(normalized) ||
+    normalized.endsWith('.vercel.app') ||
+    normalized.endsWith('.onrender.com') ||
+    normalized.endsWith('.netlify.app') ||
+    normalized.endsWith('.fly.dev')
+  );
+};
+
 const corsOptions = {
   origin: (origin, callback) => {
     if (process.env.NODE_ENV !== 'production') {
       return callback(null, true);
     }
 
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      return callback(null, true);
+    }
 
-    if (
-  isLocalOrigin(origin) ||
-  explicitAllowedOrigins.includes(origin) ||
-  origin.includes('vercel.app')   // 🔥 THIS LINE
-) {
-  return callback(null, true);
-}
+    if (isLocalOrigin(origin) || isAllowedProductionOrigin(origin)) {
+      return callback(null, true);
+    }
 
-    return callback(new Error(`Not allowed by CORS: ${origin}`));
+    callback(new Error(`Not allowed by CORS: ${origin}`));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'X-Timezone'],
+  optionsSuccessStatus: 204,
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
 };
 
 app.use(cors(corsOptions));
