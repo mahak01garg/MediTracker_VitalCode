@@ -54,7 +54,8 @@ const premiumRewards = [
         pointsRequired: 50,
         accessType: 'One appointment',
         durationDays: 30,
-        benefit: 'Appointment fee discount'
+        benefit: '20% appointment fee discount',
+        discountPercent: 20
     }
 ];
 

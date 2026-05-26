@@ -3,6 +3,7 @@ const Schedule = require('../models/schedule.model.js');
 const Doctor = require('../models/doctor.models.js');
 const Client = require('../models/client.model.js');
 const User = require('../models/User.js');
+const Reward = require('../models/Reward.js');
 const crypto = require('crypto');
 
 const buildAssetUrl = (req, filePath) => {
@@ -52,6 +53,21 @@ const getRazorpayClient = () => {
     key_id: keyId,
     key_secret: keySecret,
   });
+};
+
+const findActiveAppointmentDiscount = async (patientId) => {
+  const now = new Date();
+  return Reward.findOne({
+    userId: patientId,
+    redeemed: true,
+    'metadata.premiumFeatureId': 'appointment_discount_voucher',
+    'metadata.usedAppointmentRequestId': { $exists: false },
+    $or: [
+      { 'metadata.accessUntil': null },
+      { 'metadata.accessUntil': { $exists: false } },
+      { 'metadata.accessUntil': { $gte: now } },
+    ],
+  }).sort({ redeemedAt: 1 });
 };
 
 const requestSlot = async (req, res) => {
@@ -185,7 +201,12 @@ const createPaymentOrder = async (req, res) => {
       });
     }
 
-    const amount = Math.round(Number(request.fee || 0) * 100);
+    const discountReward = await findActiveAppointmentDiscount(patientId);
+    const discountPercent = discountReward ? 20 : 0;
+    const originalFee = Number(request.fee || 0);
+    const discountAmount = Math.round((originalFee * discountPercent) / 100);
+    const payableFee = Math.max(originalFee - discountAmount, 0);
+    const amount = Math.round(payableFee * 100);
     if (!amount || amount <= 0) {
       return res.status(400).json({ message: 'Invalid slot fee for payment' });
     }
@@ -198,6 +219,8 @@ const createPaymentOrder = async (req, res) => {
         requestId: request._id.toString(),
         doctorId: doctorId.toString(),
         patientId: patientId.toString(),
+        originalFee: originalFee.toString(),
+        discountAmount: discountAmount.toString(),
       },
     });
 
@@ -212,6 +235,11 @@ const createPaymentOrder = async (req, res) => {
         orderId: order.id,
         amount: order.amount,
         currency: order.currency,
+        originalFee,
+        discountAmount,
+        payableFee,
+        premiumDiscountApplied: Boolean(discountReward),
+        premiumDiscountRewardId: discountReward?._id || null,
         keyId: process.env.RAZORPAY_KEY_ID,
         doctorName: undefined,
         patientName: req.client?.name || '',
@@ -277,6 +305,16 @@ const verifyPaymentAndConfirm = async (req, res) => {
 
     await request.save();
     await schedule.save();
+
+    const discountReward = await findActiveAppointmentDiscount(patientId);
+    if (discountReward) {
+      discountReward.metadata = {
+        ...(discountReward.metadata || {}),
+        usedAppointmentRequestId: request._id,
+        usedAt: new Date(),
+      };
+      await discountReward.save();
+    }
 
     return res.status(200).json({
       success: true,

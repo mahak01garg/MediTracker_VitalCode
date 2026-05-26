@@ -101,6 +101,10 @@ const MyAppointments = () => {
         return;
       }
 
+      if (orderData?.premiumDiscountApplied) {
+        toast.success(`Premium discount applied. You saved ₹${orderData.discountAmount || 0}.`);
+      }
+
       const sdkLoaded = await loadRazorpayScript();
       if (!sdkLoaded) {
         toast.error('Razorpay SDK failed to load');
