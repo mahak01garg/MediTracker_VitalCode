@@ -727,7 +727,10 @@ class RewardService {
           partnerId: offerId,
           partnerName: offerData.partner,
           discountCode: discountCode,
-          discountAmount: offerData.pointsRequired
+          discountAmount: offerData.pointsRequired,
+          discountLabel: offerData.discountLabel,
+          website: offerData.website,
+          websiteUrl: offerData.websiteUrl
         }
       });
 
@@ -764,8 +767,11 @@ class RewardService {
       {
         id: 'pharma_1',
         partner: 'MediPharma',
+        website: 'medipharma.example.com',
+        websiteUrl: 'https://medipharma.example.com',
         title: '10% Off on Prescriptions',
         description: 'Get 10% discount on all prescription medications',
+        discountLabel: '10% off',
         pointsRequired: 100,
         validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         logo: '💊'
@@ -773,8 +779,11 @@ class RewardService {
       {
         id: 'pharma_2',
         partner: 'HealthPlus',
+        website: 'healthplus.example.com',
+        websiteUrl: 'https://healthplus.example.com',
         title: 'Free Delivery',
         description: 'Free home delivery on orders above ₹500',
+        discountLabel: 'Free delivery',
         pointsRequired: 50,
         validUntil: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
         logo: '🚚'
@@ -782,8 +791,11 @@ class RewardService {
       {
         id: 'wellness_1',
         partner: 'Wellness World',
+        website: 'wellnessworld.example.com',
+        websiteUrl: 'https://wellnessworld.example.com',
         title: '20% Off Supplements',
         description: 'Discount on vitamins and supplements',
+        discountLabel: '20% off',
         pointsRequired: 150,
         validUntil: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
         logo: '💪'
@@ -791,8 +803,11 @@ class RewardService {
       {
         id: 'monitoring_1',
         partner: 'HealthTrack',
+        website: 'healthtrack.example.com',
+        websiteUrl: 'https://healthtrack.example.com',
         title: 'Free BP Monitor',
         description: 'Get a free blood pressure monitor',
+        discountLabel: 'Free device',
         pointsRequired: 500,
         validUntil: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
         logo: '❤️'

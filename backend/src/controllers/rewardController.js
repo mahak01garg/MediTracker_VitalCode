@@ -139,16 +139,18 @@ exports.getPartnerOffers = async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        // Get offers from service
-        const partnerOffers = await rewardService.getPartnerOffers(user.rewardPoints || 0);
+        const currentPoints = user.rewardPoints || 0;
+        const partnerOffers = await rewardService.getPartnerOffers(currentPoints);
 
-        // Filter offers user can afford
-        const availableOffers = partnerOffers.filter(offer => 
-            (user.rewardPoints || 0) >= offer.pointsRequired
-        );
+        const allOffers = partnerOffers
+            .map((offer) => ({
+                ...offer,
+                canRedeem: currentPoints >= offer.pointsRequired,
+                pointsShort: Math.max(offer.pointsRequired - currentPoints, 0)
+            }))
+            .sort((a, b) => a.pointsRequired - b.pointsRequired);
 
-        // Sort by points required (lowest first)
-        availableOffers.sort((a, b) => a.pointsRequired - b.pointsRequired);
+        const availableOffers = allOffers.filter((offer) => offer.canRedeem);
 
         // Get redeemed offers
         const redeemedOffers = await Reward.find({
@@ -159,7 +161,8 @@ exports.getPartnerOffers = async (req, res) => {
         .select('partnerOffer redeemedAt createdAt');
 
         res.json({
-            currentPoints: user.rewardPoints || 0,
+            currentPoints,
+            allOffers,
             availableOffers,
             redeemedOffers,
             totalOffers: partnerOffers.length,

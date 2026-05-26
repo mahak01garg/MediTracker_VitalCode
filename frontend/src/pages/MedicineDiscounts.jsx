@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FiCheckCircle, FiCopy, FiGift, FiRefreshCw, FiShoppingBag, FiTag } from 'react-icons/fi';
+import { FiCheckCircle, FiCopy, FiExternalLink, FiGift, FiLock, FiRefreshCw, FiShoppingBag, FiTag } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { rewardAPI } from '../api/reward';
 
@@ -20,7 +20,8 @@ const MedicineDiscounts = () => {
   const [latestRedemption, setLatestRedemption] = useState(null);
 
   const currentPoints = offersData?.currentPoints ?? pointsData?.totalPoints ?? 0;
-  const offers = offersData?.availableOffers || [];
+  const offers = offersData?.allOffers || offersData?.availableOffers || [];
+  const redeemableOfferCount = offersData?.affordableOffers ?? offers.filter((offer) => offer.canRedeem).length;
   const redeemedOffers = offersData?.redeemedOffers || [];
 
   const redeemedCodes = useMemo(
@@ -110,7 +111,7 @@ const MedicineDiscounts = () => {
           <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">Redeemable Offers</p>
           <div className="mt-2 flex items-center text-3xl font-extrabold text-cyan-600">
             <FiTag className="mr-3 h-7 w-7" />
-            {offers.length}
+            {redeemableOfferCount}
           </div>
         </div>
         <button
@@ -131,15 +132,31 @@ const MedicineDiscounts = () => {
               <p className="text-sm font-semibold uppercase tracking-wide">Latest Discount Code</p>
               <p className="mt-1 text-xl font-extrabold">{latestRedemption.title}</p>
               <p className="text-sm">{latestRedemption.partner}</p>
+              {latestRedemption.website && (
+                <p className="text-sm font-semibold">{latestRedemption.website}</p>
+              )}
             </div>
-            <button
-              type="button"
-              onClick={() => copyCode(latestRedemption.discountCode)}
-              className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 font-mono text-lg font-extrabold text-white transition hover:bg-emerald-700"
-            >
-              {latestRedemption.discountCode}
-              <FiCopy className="ml-3 h-5 w-5" />
-            </button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => copyCode(latestRedemption.discountCode)}
+                className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 font-mono text-lg font-extrabold text-white transition hover:bg-emerald-700"
+              >
+                {latestRedemption.discountCode}
+                <FiCopy className="ml-3 h-5 w-5" />
+              </button>
+              {latestRedemption.websiteUrl && (
+                <a
+                  href={latestRedemption.websiteUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center rounded-xl border border-emerald-300 px-4 py-3 font-bold text-emerald-800 transition hover:bg-emerald-100 dark:border-emerald-700 dark:text-emerald-100 dark:hover:bg-emerald-900"
+                >
+                  Open Website
+                  <FiExternalLink className="ml-2 h-4 w-4" />
+                </a>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -150,19 +167,23 @@ const MedicineDiscounts = () => {
         </div>
       ) : offers.length === 0 ? (
         <div className="rounded-2xl border border-orange-200 bg-orange-50 p-8 text-center text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-          You do not have enough points for a medicine discount yet. Keep logging doses to unlock offers.
+          No medicine discount offers are available right now.
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {offers.map((offer) => (
             <div
               key={offer.id}
-              className="rounded-2xl border border-gray-200 bg-white/95 p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-gray-700 dark:bg-gray-800"
+              className={`rounded-2xl border bg-white/95 p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:bg-gray-800 ${
+                offer.canRedeem
+                  ? 'border-emerald-200 dark:border-emerald-900'
+                  : 'border-gray-200 opacity-90 dark:border-gray-700'
+              }`}
             >
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-300">
-                    {offer.partner}
+                    {offer.partner} · {offer.website}
                   </p>
                   <h3 className="mt-1 text-xl font-extrabold text-gray-900 dark:text-white">
                     {offer.title}
@@ -179,22 +200,49 @@ const MedicineDiscounts = () => {
 
               <div className="mt-5 space-y-2 text-sm text-gray-700 dark:text-gray-300">
                 <div className="flex items-center justify-between">
+                  <span>Discount</span>
+                  <span className="font-extrabold text-cyan-600 dark:text-cyan-300">{offer.discountLabel}</span>
+                </div>
+                <div className="flex items-center justify-between">
                   <span>Points needed</span>
                   <span className="font-extrabold text-emerald-600">{offer.pointsRequired}</span>
                 </div>
+                {!offer.canRedeem && (
+                  <div className="flex items-center justify-between">
+                    <span>More points needed</span>
+                    <span className="font-extrabold text-orange-600">{offer.pointsShort}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <span>Valid until</span>
                   <span className="font-semibold">{formatDate(offer.validUntil)}</span>
                 </div>
               </div>
 
+              {offer.websiteUrl && (
+                <a
+                  href={offer.websiteUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-4 inline-flex items-center text-sm font-bold text-cyan-700 hover:text-cyan-800 dark:text-cyan-300"
+                >
+                  Use on {offer.website}
+                  <FiExternalLink className="ml-1 h-4 w-4" />
+                </a>
+              )}
+
               <button
                 type="button"
                 onClick={() => handleRedeem(offer.id)}
-                disabled={redeemingId === offer.id}
-                className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-400"
+                disabled={!offer.canRedeem || redeemingId === offer.id}
+                className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-gray-400"
               >
-                {redeemingId === offer.id ? 'Generating Code...' : 'Redeem Discount'}
+                {!offer.canRedeem && <FiLock className="mr-2 h-4 w-4" />}
+                {redeemingId === offer.id
+                  ? 'Generating Code...'
+                  : offer.canRedeem
+                  ? 'Redeem Discount'
+                  : `Need ${offer.pointsShort} More Points`}
               </button>
             </div>
           ))}
@@ -218,15 +266,31 @@ const MedicineDiscounts = () => {
                   <p className="mt-1 font-mono text-lg font-extrabold text-gray-900 dark:text-white">
                     {offer.discountCode}
                   </p>
+                  {offer.website && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{offer.website}</p>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => copyCode(offer.discountCode)}
-                  className="inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2 font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-100 dark:hover:bg-gray-700"
-                >
-                  <FiCopy className="mr-2 h-4 w-4" />
-                  Copy
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => copyCode(offer.discountCode)}
+                    className="inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2 font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <FiCopy className="mr-2 h-4 w-4" />
+                    Copy
+                  </button>
+                  {offer.websiteUrl && (
+                    <a
+                      href={offer.websiteUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2 font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-100 dark:hover:bg-gray-700"
+                    >
+                      Open
+                      <FiExternalLink className="ml-2 h-4 w-4" />
+                    </a>
+                  )}
+                </div>
               </div>
             ))}
           </div>
