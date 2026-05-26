@@ -55,6 +55,8 @@ const getRazorpayClient = () => {
   });
 };
 
+const DEFAULT_APPOINTMENT_DISCOUNT_PERCENT = Number(process.env.APPOINTMENT_DISCOUNT_PERCENT || 20);
+
 const findActiveAppointmentDiscount = async (patientId) => {
   const now = new Date();
   return Reward.findOne({
@@ -71,7 +73,15 @@ const findActiveAppointmentDiscount = async (patientId) => {
 };
 
 const getRewardDiscountPercent = (reward) => {
-  const discountPercent = Number(reward?.metadata?.discountPercent || 0);
+  if (!reward || !reward.metadata) return 0;
+
+  const metadata = reward.metadata || {};
+  const rawPercent = metadata.discountPercent;
+  const fallbackPercent = metadata.premiumFeatureId === 'appointment_discount_voucher'
+    ? DEFAULT_APPOINTMENT_DISCOUNT_PERCENT
+    : 0;
+
+  const discountPercent = Number(rawPercent != null ? rawPercent : fallbackPercent);
   if (!Number.isFinite(discountPercent)) return 0;
   return Math.min(Math.max(discountPercent, 0), 100);
 };
@@ -209,6 +219,12 @@ const createPaymentOrder = async (req, res) => {
 
     const discountReward = await findActiveAppointmentDiscount(patientId);
     const discountPercent = getRewardDiscountPercent(discountReward);
+
+    if (discountReward && discountPercent > 0 && discountReward.metadata && discountReward.metadata.discountPercent == null) {
+      discountReward.metadata.discountPercent = discountPercent;
+      await discountReward.save();
+    }
+
     const originalFee = Number(request.fee || 0);
     const discountAmount = Math.round((originalFee * discountPercent) / 100);
     const payableFee = Math.max(originalFee - discountAmount, 0);
