@@ -9,8 +9,9 @@ class EmailService {
     }
 
     initializeTransporter() {
-        const { EMAIL_USER, EMAIL_MOCK } = process.env;
-        const emailPassword = process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS || process.env.EMAIL_APP_PASSWORD;
+        const EMAIL_USER = process.env.EMAIL_USER || process.env.SMTP_USER;
+        const EMAIL_MOCK = process.env.EMAIL_MOCK;
+        const emailPassword = process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS || process.env.EMAIL_APP_PASSWORD || process.env.SMTP_PASS;
 
         // Check if we should use mock mode
         if (EMAIL_MOCK === 'true') {
@@ -57,11 +58,17 @@ EMAIL_FROM=noreply@meditracker.com
                 logger: process.env.NODE_ENV === 'development'
             };
 
+            const smtpHost = process.env.EMAIL_HOST || process.env.SMTP_HOST;
+            const smtpPort = process.env.EMAIL_PORT || process.env.SMTP_PORT;
+            const smtpSecure = process.env.EMAIL_SECURE || process.env.SMTP_SECURE;
+            const smtpRequireTls = process.env.EMAIL_REQUIRE_TLS || process.env.SMTP_REQUIRE_TLS;
+
             // If custom SMTP settings are provided
-            if (process.env.EMAIL_HOST) {
-                config.host = process.env.EMAIL_HOST;
-                config.port = parseInt(process.env.EMAIL_PORT) || 587;
-                config.secure = process.env.EMAIL_SECURE === 'true';
+            if (smtpHost) {
+                config.host = smtpHost;
+                config.port = parseInt(smtpPort) || 587;
+                config.secure = smtpSecure === 'true';
+                config.requireTLS = smtpRequireTls !== 'false';
             }
 
             this.transporter = nodemailer.createTransport(config);
@@ -156,7 +163,7 @@ EMAIL_FROM=noreply@meditracker.com
             }
 
             // Prepare from address
-            const fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+            const fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER || process.env.SMTP_USER;
             const fromName = process.env.EMAIL_FROM_NAME || 'MediTracker';
             
             const mailOptions = {

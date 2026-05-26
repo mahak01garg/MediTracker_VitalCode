@@ -83,8 +83,14 @@ MediTracker is a **full-stack health management application** designed to help u
 
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
-EMAIL_USER=your_email
-EMAIL_PASS=your_email_password
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_app_password_here
+# or if using SMTP naming:
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_app_password_here
+# Optional custom SMTP host/port:
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
 OPENAI_API_KEY=your_openai_api_key
 VITE_FIREBASE_API_KEY=your_api_key
 VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com

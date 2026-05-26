@@ -11,11 +11,14 @@ const REFRESH_TOKEN_EXPIRY = process.env.REFRESH_TOKEN_EXPIRY || process.env.JWT
 
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
+const emailUser = process.env.EMAIL_USER || process.env.SMTP_USER;
+const emailPass = process.env.EMAIL_PASS || process.env.EMAIL_PASSWORD || process.env.EMAIL_APP_PASSWORD || process.env.SMTP_PASS;
+
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: emailUser,
+    pass: emailPass,
   },
 });
 
@@ -75,7 +78,7 @@ const registerDoctor = async (req, res) => {
     // Send OTP email
     try {
       await transporter.sendMail({
-        from: process.env.EMAIL_USER,
+        from: emailUser,
         to: email,
         subject: "Your OTP for Email Verification",
         html: `<p>Your OTP is: <strong>${otp}</strong></p><p>This OTP is valid for 5 minutes.</p>`,
