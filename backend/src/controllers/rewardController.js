@@ -11,7 +11,7 @@ const premiumRewards = [
         title: 'Advanced Analytics Plus',
         category: 'Analytics',
         description: 'Unlock deeper adherence trends, consistency score, and medication pattern insights for 7 days.',
-        pointsRequired: 80,
+        pointsRequired: 10,
         accessType: '7 days',
         durationDays: 7,
         benefit: 'Advanced charts and insights'
@@ -21,7 +21,7 @@ const premiumRewards = [
         title: 'AI Health Insights Plus',
         category: 'AI',
         description: 'Unlock personalized weekly health suggestions, missed-dose pattern notes, and doctor visit prompts for 7 days.',
-        pointsRequired: 120,
+        pointsRequired: 20,
         accessType: '7 days',
         durationDays: 7,
         benefit: 'Premium AI guidance'
@@ -31,7 +31,7 @@ const premiumRewards = [
         title: 'Health Report Export',
         category: 'Reports',
         description: 'Unlock one premium downloadable health report with medication history, adherence summary, and appointments.',
-        pointsRequired: 150,
+        pointsRequired: 20,
         accessType: 'One report',
         durationDays: 0,
         benefit: 'PDF health report'
@@ -41,7 +41,7 @@ const premiumRewards = [
         title: 'Emergency Medical Card',
         category: 'Safety',
         description: 'Unlock a shareable emergency card with medicines, allergies, conditions, and emergency contact details.',
-        pointsRequired: 200,
+        pointsRequired: 40,
         accessType: 'Lifetime',
         durationDays: null,
         benefit: 'Shareable emergency card'
@@ -51,7 +51,7 @@ const premiumRewards = [
         title: 'Appointment Discount Voucher',
         category: 'Appointments',
         description: 'Unlock a voucher that can be used as an appointment fee discount in the next payment flow.',
-        pointsRequired: 300,
+        pointsRequired: 50,
         accessType: 'One appointment',
         durationDays: 30,
         benefit: 'Appointment fee discount'
