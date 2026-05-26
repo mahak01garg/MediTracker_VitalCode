@@ -59,13 +59,13 @@ class DoseNotificationManager {
                 let success = false;
 
                 // Email
-                if (user.notificationPreferences?.email) {
+                if (user.notificationPreferences?.email !== false) {
                     const result = await EmailService.sendReminderEmail(user.email, reminderData);
                     success = result?.success || false;
                 }
 
                 // Push
-                if (user.notificationPreferences?.push) {
+                if (user.notificationPreferences?.push !== false) {
                     try {
                         await PushNotification.sendReminder(user._id, reminderData);
                         success = true;
@@ -118,13 +118,13 @@ class DoseNotificationManager {
                 let success = false;
 
                 // Email
-                if (user.notificationPreferences?.email) {
+                if (user.notificationPreferences?.email !== false) {
                     const result = await EmailService.sendMissedDoseAlert(user.email, alertData);
                     success = result?.success || false;
                 }
 
                 // Push
-                if (user.notificationPreferences?.push) {
+                if (user.notificationPreferences?.push !== false) {
                     try {
                         await PushNotification.sendMissedDose(user._id, alertData);
                         success = true;

@@ -86,10 +86,10 @@ class ReminderScheduler {
         };
 
         try {
-            if (prefs.email && user.email) {
+            if (prefs.email !== false && user.email) {
                 await notificationService.sendReminderEmail(user.email, reminderData);
             }
-            if (prefs.push) {
+            if (prefs.push !== false) {
                 await pushNotification.sendReminder(user._id, reminderData);
             }
             // SMS logic can be added here if needed

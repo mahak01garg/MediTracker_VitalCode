@@ -9,7 +9,8 @@ class EmailService {
     }
 
     initializeTransporter() {
-        const { EMAIL_USER, EMAIL_PASSWORD, EMAIL_MOCK } = process.env;
+        const { EMAIL_USER, EMAIL_MOCK } = process.env;
+        const emailPassword = process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS || process.env.EMAIL_APP_PASSWORD;
 
         // Check if we should use mock mode
         if (EMAIL_MOCK === 'true') {
@@ -19,7 +20,7 @@ class EmailService {
         }
 
         // Check if email credentials exist
-        if (!EMAIL_USER || !EMAIL_PASSWORD) {
+        if (!EMAIL_USER || !emailPassword) {
             console.warn('⚠️  Email service disabled - Missing EMAIL_USER or EMAIL_PASSWORD in .env');
             console.log('ℹ️  To enable email service, add these to your .env file:');
             console.log(`
@@ -37,7 +38,7 @@ EMAIL_FROM=noreply@meditracker.com
                 service: process.env.EMAIL_SERVICE || 'gmail',
                 auth: {
                     user: EMAIL_USER,
-                    pass: EMAIL_PASSWORD.trim()
+                    pass: emailPassword.trim()
                 },
                 // Production optimizations
                 pool: true,
@@ -146,7 +147,7 @@ EMAIL_FROM=noreply@meditracker.com
                 
                 // Return mock success response
                 return {
-                    success: true,
+                    success: emailMock,
                     mock: true,
                     messageId: `mock-${Date.now()}`,
                     message: `Email logged (${emailType.toLowerCase()} mode)`,
