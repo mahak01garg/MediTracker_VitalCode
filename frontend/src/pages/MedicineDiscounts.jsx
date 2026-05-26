@@ -12,6 +12,53 @@ const formatDate = (value) => {
   });
 };
 
+const fallbackOffers = [
+  {
+    id: 'pharma_2',
+    partner: 'HealthPlus',
+    website: 'healthplus.example.com',
+    websiteUrl: 'https://healthplus.example.com',
+    title: 'Free Delivery',
+    description: 'Free home delivery on medicine orders above Rs. 500',
+    discountLabel: 'Free delivery',
+    pointsRequired: 50,
+    validUntil: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'pharma_1',
+    partner: 'MediPharma',
+    website: 'medipharma.example.com',
+    websiteUrl: 'https://medipharma.example.com',
+    title: '10% Off on Prescriptions',
+    description: 'Get 10% discount on prescription medicines',
+    discountLabel: '10% off',
+    pointsRequired: 100,
+    validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'wellness_1',
+    partner: 'Wellness World',
+    website: 'wellnessworld.example.com',
+    websiteUrl: 'https://wellnessworld.example.com',
+    title: '20% Off Supplements',
+    description: 'Discount on vitamins and wellness supplements',
+    discountLabel: '20% off',
+    pointsRequired: 150,
+    validUntil: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'monitoring_1',
+    partner: 'HealthTrack',
+    website: 'healthtrack.example.com',
+    websiteUrl: 'https://healthtrack.example.com',
+    title: 'Free BP Monitor',
+    description: 'Redeem points for a free blood pressure monitor',
+    discountLabel: 'Free device',
+    pointsRequired: 500,
+    validUntil: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
 const MedicineDiscounts = () => {
   const [pointsData, setPointsData] = useState(null);
   const [offersData, setOffersData] = useState(null);
@@ -20,8 +67,15 @@ const MedicineDiscounts = () => {
   const [latestRedemption, setLatestRedemption] = useState(null);
 
   const currentPoints = offersData?.currentPoints ?? pointsData?.totalPoints ?? 0;
-  const offers = offersData?.allOffers || offersData?.availableOffers || [];
-  const redeemableOfferCount = offersData?.affordableOffers ?? offers.filter((offer) => offer.canRedeem).length;
+  const apiOffers = offersData?.allOffers || offersData?.availableOffers || [];
+  const offers = (apiOffers.length > 0 ? apiOffers : fallbackOffers)
+    .map((offer) => ({
+      ...offer,
+      canRedeem: offer.canRedeem ?? currentPoints >= offer.pointsRequired,
+      pointsShort: offer.pointsShort ?? Math.max(offer.pointsRequired - currentPoints, 0),
+    }))
+    .sort((a, b) => a.pointsRequired - b.pointsRequired);
+  const redeemableOfferCount = offers.filter((offer) => offer.canRedeem).length;
   const redeemedOffers = offersData?.redeemedOffers || [];
 
   const redeemedCodes = useMemo(
@@ -183,7 +237,7 @@ const MedicineDiscounts = () => {
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-300">
-                    {offer.partner} · {offer.website}
+                    {offer.partner} - {offer.website}
                   </p>
                   <h3 className="mt-1 text-xl font-extrabold text-gray-900 dark:text-white">
                     {offer.title}
