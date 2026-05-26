@@ -21,7 +21,6 @@ const emailTestRoutes = require('./routes/emailTest');
 const scheduleRoutes = require('./routes/scheduleRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const ChangePassword = require('./routes/changePasswordRoute');
-const ambulanceRoutes = require('./routes/ambulance.routes.js');
 
 // Import appointment routes
 const appointmentScheduleRoutes = require('./routes/schedule.routes.js');
@@ -163,7 +162,6 @@ app.use('/api/email-test', emailTestRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/user',ChangePassword);
 app.use("/api/notifications", require("./routes/notificationRoutes"));
-app.use('/api/ambulance', ambulanceRoutes);
 console.log('API routes initialized');
 app.use('/api/schedule', scheduleRoutes);
 app.use('/api/user',userRoutes);

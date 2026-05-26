@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiCalendar, FiHome, FiTruck } from 'react-icons/fi';
+import { FiCalendar, FiGift, FiHome } from 'react-icons/fi';
 import { GiStethoscope } from 'react-icons/gi';
 import PageDoodle from '../components/common/PageDoodle';
 import { useAuth } from '../context/AuthContext';
@@ -53,12 +53,12 @@ const Appointments = () => {
       path: '/appointments/slots'
     },
     {
-      id: 'ambulance-booking',
-      title: 'Ambulance Booking',
-      description: 'Find hospitals and available ambulances instantly',
-      icon: <FiTruck className="w-8 h-8" />,
-      color: 'from-red-500 to-rose-600',
-      path: '/ambulance-booking'
+      id: 'medicine-discounts',
+      title: 'Medicine Discounts',
+      description: 'Redeem reward points for medicine website discount codes',
+      icon: <FiGift className="w-8 h-8" />,
+      color: 'from-emerald-500 to-teal-600',
+      path: '/medicine-discounts'
     }
   ];
 

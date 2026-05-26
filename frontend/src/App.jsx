@@ -29,7 +29,7 @@ import SearchDoctors from './pages/SearchDoctors';
 import BookAppointment from './pages/BookAppointment';
 import MyAppointments from './pages/MyAppointments';
 import AvailableSlots from './pages/AvailableSlots';
-import AmbulanceBooking from './pages/AmbulanceBooking';
+import MedicineDiscounts from './pages/MedicineDiscounts';
 import NearbyHospitals from './pages/NearbyHospitals';
 import DoctorSlotsManager from './pages/DoctorSlotsManager';
 
@@ -161,7 +161,8 @@ function App() {
               <Route path="/appointments/book/:doctorId" element={<PrivateRoute allowedRoles={['patient']}><BookAppointment /></PrivateRoute>} />
               <Route path="/appointments/my-appointments" element={<PrivateRoute><MyAppointments /></PrivateRoute>} />
               <Route path="/appointments/manage-slots" element={<PrivateRoute allowedRoles={['doctor']}><DoctorSlotsManager /></PrivateRoute>} />
-              <Route path="/ambulance-booking" element={<PrivateRoute><AmbulanceBooking /></PrivateRoute>} />
+              <Route path="/medicine-discounts" element={<PrivateRoute allowedRoles={['patient']}><MedicineDiscounts /></PrivateRoute>} />
+              <Route path="/rewards" element={<Navigate to="/medicine-discounts" replace />} />
               <Route path="/nearby-hospitals" element={<PrivateRoute><NearbyHospitals /></PrivateRoute>} />
               <Route path="/support" element={<PrivateRoute><Support /></PrivateRoute>} />
             </Route>

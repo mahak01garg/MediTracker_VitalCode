@@ -228,8 +228,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
     FiHome, 
     FiCalendar,
+    FiGift,
     FiMapPin,
-    FiTruck,
     FiUser,
     FiSettings,
     FiHelpCircle,
@@ -259,7 +259,6 @@ const Sidebar = () => {
     const mainMenuItems = [
         { id: 'ai-assistant', label: 'AI Assistant', icon: <BsRobot className="w-5 h-5" />, path: '/chatbot' },
         { id: 'appointments', label: 'Appointments', icon: <FiCalendar className="w-5 h-5" />, path: '/appointments' },
-        { id: 'ambulance', label: 'Ambulance', icon: <FiTruck className="w-5 h-5" />, path: '/ambulance-booking' },
         { id: 'nearby-hospitals', label: 'Nearby Hospitals', icon: <FiMapPin className="w-5 h-5" />, path: '/nearby-hospitals' },
     ];
     const patientMenuItems = [
@@ -267,6 +266,7 @@ const Sidebar = () => {
         { id: 'medications', label: 'Medications', icon: <FaPills className="w-5 h-5" />, path: '/medications' },
         { id: 'schedule', label: 'Schedule', icon: <FiCalendar className="w-5 h-5" />, path: '/schedule' },
         { id: 'analytics', label: 'Analytics', icon: <FiTrendingUp className="w-5 h-5" />, path: '/analytics' },
+        { id: 'medicine-discounts', label: 'Medicine Discounts', icon: <FiGift className="w-5 h-5" />, path: '/medicine-discounts' },
     ];
     const visibleMainMenuItems = isDoctor ? mainMenuItems : [...patientMenuItems, ...mainMenuItems];
 

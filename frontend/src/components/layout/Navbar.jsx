@@ -281,7 +281,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useNotifications } from "../../context/NotificationContext";
 import { BsRobot } from "react-icons/bs";
-import { FiActivity, FiBell, FiCalendar, FiHome, FiMapPin, FiMenu, FiMoon, FiSun, FiTruck, FiX } from "react-icons/fi";
+import { FiActivity, FiBell, FiCalendar, FiGift, FiHome, FiMapPin, FiMenu, FiMoon, FiSun, FiX } from "react-icons/fi";
 import { FaPills } from "react-icons/fa";
 
 const Navbar = () => {
@@ -304,7 +304,6 @@ const Navbar = () => {
   const sharedNavItems = [
     { to: "/chatbot", label: "AI Assistant", icon: BsRobot },
     { to: "/appointments", label: "Appointments", icon: FiCalendar },
-    { to: "/ambulance-booking", label: "Ambulance", icon: FiTruck },
     { to: "/nearby-hospitals", label: "Nearby Hospitals", icon: FiMapPin },
   ];
 
@@ -313,6 +312,7 @@ const Navbar = () => {
     { to: "/medications", label: "Medications", icon: FaPills },
     { to: "/schedule", label: "Schedule", icon: FiCalendar },
     { to: "/analytics", label: "Analytics", icon: FiActivity },
+    { to: "/medicine-discounts", label: "Medicine Discounts", icon: FiGift },
   ];
 
   const navItems = isDoctor ? sharedNavItems : [...patientNavItems, ...sharedNavItems];

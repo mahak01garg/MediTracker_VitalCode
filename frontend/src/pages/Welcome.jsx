@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { FiArrowRight, FiCalendar, FiCreditCard, FiHeart, FiMapPin, FiShield, FiTruck } from "react-icons/fi";
+import { FiArrowRight, FiCalendar, FiCreditCard, FiGift, FiHeart, FiMapPin, FiShield } from "react-icons/fi";
 import { FaPills } from "react-icons/fa";
 import { GiStethoscope } from "react-icons/gi";
 
@@ -71,8 +71,8 @@ const Welcome = () => {
                 <p>Secure account flow with personalized experience.</p>
               </div>
               <div className="flex items-start rounded-xl bg-white/15 p-3 text-sm">
-                <FiTruck className="mr-3 mt-1 h-5 w-5" />
-                <p>Instant ambulance booking with hospital-wise availability.</p>
+                <FiGift className="mr-3 mt-1 h-5 w-5" />
+                <p>Reward points can unlock medicine website discount codes.</p>
               </div>
               <div className="flex items-start rounded-xl bg-white/15 p-3 text-sm">
                 <FiMapPin className="mr-3 mt-1 h-5 w-5" />
