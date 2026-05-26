@@ -7,50 +7,10 @@ const rewardService = new RewardService();
 
 const premiumRewards = [
     {
-        id: 'advanced_analytics_7d',
-        title: 'Advanced Analytics Plus',
-        category: 'Analytics',
-        description: 'Unlock deeper adherence trends, consistency score, and medication pattern insights for 7 days.',
-        pointsRequired: 10,
-        accessType: '7 days',
-        durationDays: 7,
-        benefit: 'Advanced charts and insights'
-    },
-    {
-        id: 'ai_health_insights_7d',
-        title: 'AI Health Insights Plus',
-        category: 'AI',
-        description: 'Unlock personalized weekly health suggestions, missed-dose pattern notes, and doctor visit prompts for 7 days.',
-        pointsRequired: 20,
-        accessType: '7 days',
-        durationDays: 7,
-        benefit: 'Premium AI guidance'
-    },
-    {
-        id: 'health_report_export',
-        title: 'Health Report Export',
-        category: 'Reports',
-        description: 'Unlock one premium downloadable health report with medication history, adherence summary, and appointments.',
-        pointsRequired: 20,
-        accessType: 'One report',
-        durationDays: 0,
-        benefit: 'PDF health report'
-    },
-    {
-        id: 'emergency_card_lifetime',
-        title: 'Emergency Medical Card',
-        category: 'Safety',
-        description: 'Unlock a shareable emergency card with medicines, allergies, conditions, and emergency contact details.',
-        pointsRequired: 40,
-        accessType: 'Lifetime',
-        durationDays: null,
-        benefit: 'Shareable emergency card'
-    },
-    {
         id: 'appointment_discount_voucher',
-        title: 'Appointment Discount Voucher',
+        title: 'Doctor Appointment Discount',
         category: 'Appointments',
-        description: 'Unlock a voucher that can be used as an appointment fee discount in the next payment flow.',
+        description: 'Use reward points to get 20% off the next unpaid doctor appointment payment.',
         pointsRequired: 50,
         accessType: 'One appointment',
         durationDays: 30,
@@ -73,13 +33,17 @@ const buildPremiumRewardsPayload = async (userId, currentPoints) => {
         if (!featureId || unlockLookup.has(featureId)) return;
 
         const accessUntil = record.metadata?.accessUntil || null;
-        const isActive = !accessUntil || accessUntil >= now;
+        const isUsedAppointmentDiscount =
+            featureId === 'appointment_discount_voucher' &&
+            Boolean(record.metadata?.usedAppointmentRequestId);
+        const isActive = !isUsedAppointmentDiscount && (!accessUntil || accessUntil >= now);
 
         unlockLookup.set(featureId, {
             isUnlocked: isActive,
             unlockedAt: record.redeemedAt,
             accessUntil,
-            rewardId: record._id
+            rewardId: record._id,
+            usedAt: record.metadata?.usedAt || null
         });
     });
 
