@@ -85,12 +85,6 @@ const MyAppointments = () => {
   const handlePayNow = async (appointment) => {
     try {
       setPayingId(appointment._id);
-      const sdkLoaded = await loadRazorpayScript();
-      if (!sdkLoaded) {
-        toast.error('Razorpay SDK failed to load');
-        return;
-      }
-
       const doctorId = appointment.doctorId?._id || appointment.doctorId;
       const scheduleId = appointment.scheduleId?._id || appointment.scheduleId;
 
@@ -101,6 +95,18 @@ const MyAppointments = () => {
       });
 
       const orderData = orderRes.data?.data;
+      if (orderData?.paymentRequired === false) {
+        toast.success('Appointment confirmed.');
+        fetchAppointments();
+        return;
+      }
+
+      const sdkLoaded = await loadRazorpayScript();
+      if (!sdkLoaded) {
+        toast.error('Razorpay SDK failed to load');
+        return;
+      }
+
       if (!orderData?.orderId || !orderData?.keyId) {
         toast.error('Could not initialize payment.');
         return;

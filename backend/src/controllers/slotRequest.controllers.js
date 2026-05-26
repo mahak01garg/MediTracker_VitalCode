@@ -113,11 +113,6 @@ const requestSlot = async (req, res) => {
 
 const createPaymentOrder = async (req, res) => {
   try {
-    const razorpay = getRazorpayClient();
-    if (!razorpay) {
-      return res.status(500).json({ message: 'Razorpay is not configured on server' });
-    }
-
     const { scheduleId, slotIndex } = req.body;
     const patientId = req.client?._id;
 
@@ -164,6 +159,32 @@ const createPaymentOrder = async (req, res) => {
       });
     }
 
+    if (!slot.requestId) {
+      slot.requestId = request._id;
+      await schedule.save();
+    }
+
+    const razorpay = getRazorpayClient();
+    if (!razorpay) {
+      request.status = 'accepted';
+      request.paymentStatus = 'unpaid';
+      slot.isBooked = true;
+      slot.bookedBy = patientId;
+      slot.requestId = request._id;
+
+      await request.save();
+      await schedule.save();
+
+      return res.status(201).json({
+        success: true,
+        message: 'Appointment confirmed without online payment because Razorpay is not configured',
+        data: {
+          paymentRequired: false,
+          requestId: request._id,
+        },
+      });
+    }
+
     const amount = Math.round(Number(request.fee || 0) * 100);
     if (!amount || amount <= 0) {
       return res.status(400).json({ message: 'Invalid slot fee for payment' });
@@ -183,14 +204,10 @@ const createPaymentOrder = async (req, res) => {
     request.paymentOrderId = order.id;
     await request.save();
 
-    if (!slot.requestId) {
-      slot.requestId = request._id;
-      await schedule.save();
-    }
-
     return res.status(201).json({
       success: true,
       data: {
+        paymentRequired: true,
         requestId: request._id,
         orderId: order.id,
         amount: order.amount,

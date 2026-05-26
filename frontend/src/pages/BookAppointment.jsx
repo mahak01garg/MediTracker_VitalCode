@@ -84,12 +84,6 @@ const BookAppointment = () => {
 
     try {
       setSubmitting(true);
-      const sdkLoaded = await loadRazorpayScript();
-      if (!sdkLoaded) {
-        toast.error('Razorpay SDK failed to load. Please check your internet and retry.');
-        return;
-      }
-
       const response = await api.post('/appointments/slots/create-payment-order', {
         doctorId,
         scheduleId: selectedScheduleId,
@@ -97,6 +91,18 @@ const BookAppointment = () => {
       });
 
       const orderData = response.data?.data;
+      if (orderData?.paymentRequired === false) {
+        toast.success('Appointment confirmed.');
+        setTimeout(() => navigate('/appointments/my-appointments'), 1000);
+        return;
+      }
+
+      const sdkLoaded = await loadRazorpayScript();
+      if (!sdkLoaded) {
+        toast.error('Razorpay SDK failed to load. Please check your internet and retry.');
+        return;
+      }
+
       if (!orderData?.orderId || !orderData?.keyId) {
         toast.error('Could not initialize payment.');
         return;
