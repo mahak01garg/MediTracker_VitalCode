@@ -137,20 +137,30 @@ const MyAppointments = () => {
           netbanking: true,
           wallet: true,
         },
-        display: {
-          blocks: {
-            upiBlock: {
-              name: 'Pay using UPI',
-              instruments: [
-                {
-                  method: 'upi',
-                },
-              ],
+        config: {
+          display: {
+            blocks: {
+              upiBlock: {
+                name: 'Pay using UPI',
+                instruments: [
+                  {
+                    method: 'upi',
+                  },
+                ],
+              },
+              otherMethods: {
+                name: 'Other payment methods',
+                instruments: [
+                  { method: 'card' },
+                  { method: 'netbanking' },
+                  { method: 'wallet' },
+                ],
+              },
             },
-          },
-          sequence: ['block.upiBlock', 'upi', 'card', 'netbanking', 'wallet'],
-          preferences: {
-            show_default_blocks: true,
+            sequence: ['block.upiBlock', 'block.otherMethods'],
+            preferences: {
+              show_default_blocks: true,
+            },
           },
         },
         prefill: {

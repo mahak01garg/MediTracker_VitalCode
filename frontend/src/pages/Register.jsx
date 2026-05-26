@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
-import { FiUser, FiMail, FiLock, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import { FiUser, FiMail, FiLock, FiCheck, FiAlertCircle, FiEye, FiEyeOff } from 'react-icons/fi';
 import PageDoodle from '../components/common/PageDoodle';
 
 const Register = () => {
@@ -25,6 +25,8 @@ const Register = () => {
     
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     
     const { register, error: authError } = useAuth();
     const navigate = useNavigate();
@@ -279,22 +281,42 @@ const Register = () => {
                             <Input
                                 label="Password"
                                 name="password"
-                                type="password"
+                                type={showPassword ? 'text' : 'password'}
                                 placeholder="••••••••"
                                 value={formData.password}
                                 onChange={handleInputChange}
                                 error={errors.password}
+                                rightElement={
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword((prev) => !prev)}
+                                        className="text-slate-500 transition hover:text-cyan-700 dark:text-slate-300 dark:hover:text-cyan-300"
+                                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                    >
+                                        {showPassword ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
+                                    </button>
+                                }
                                 required
                             />
 
                             <Input
                                 label="Confirm Password"
                                 name="confirmPassword"
-                                type="password"
+                                type={showConfirmPassword ? 'text' : 'password'}
                                 placeholder="••••••••"
                                 value={formData.confirmPassword}
                                 onChange={handleInputChange}
                                 error={errors.confirmPassword}
+                                rightElement={
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                                        className="text-slate-500 transition hover:text-cyan-700 dark:text-slate-300 dark:hover:text-cyan-300"
+                                        aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                                    >
+                                        {showConfirmPassword ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
+                                    </button>
+                                }
                                 required
                             />
 

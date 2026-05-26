@@ -9,6 +9,7 @@ const Input = ({
     error,
     helperText,
     icon,
+    rightElement,
     disabled = false,
     required = false,
     className = '',
@@ -36,12 +37,17 @@ const Input = ({
                     placeholder={placeholder}
                     disabled={disabled}
                     required={required}
-                    className={`w-full ${icon ? 'pl-10 pr-4' : 'px-4'} py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${error
+                    className={`w-full ${icon ? 'pl-10' : 'pl-4'} ${rightElement ? 'pr-12' : 'pr-4'} py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${error
                             ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                             : 'border-gray-300 dark:border-gray-600 focus:border-blue-500'
                         } ${disabled ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : 'bg-white dark:bg-gray-800'} text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-400 ${className}`}
                     {...props}
                 />
+                {rightElement && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        {rightElement}
+                    </div>
+                )}
             </div>
             
             {(error || helperText) && (
