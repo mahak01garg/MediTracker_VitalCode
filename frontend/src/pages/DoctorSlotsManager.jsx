@@ -7,8 +7,71 @@ import { useAuth } from '../context/AuthContext';
 
 const getToday = () => new Date().toISOString().split('T')[0];
 
+const toDisplayTime = (time = '') => {
+  if (!time) return '';
+
+  const [hoursValue, minutesValue] = time.split(':').map(Number);
+  if (!Number.isFinite(hoursValue) || !Number.isFinite(minutesValue)) {
+    return time;
+  }
+
+  const suffix = hoursValue >= 12 ? 'PM' : 'AM';
+  const hours = hoursValue % 12 || 12;
+  return `${hours}:${String(minutesValue).padStart(2, '0')} ${suffix}`;
+};
+
+const addMinutes = (time, minutesToAdd) => {
+  if (!time) return '';
+
+  const [hoursValue, minutesValue] = time.split(':').map(Number);
+  if (!Number.isFinite(hoursValue) || !Number.isFinite(minutesValue)) {
+    return '';
+  }
+
+  const totalMinutes = hoursValue * 60 + minutesValue + minutesToAdd;
+  const normalizedMinutes = ((totalMinutes % 1440) + 1440) % 1440;
+  const hours = Math.floor(normalizedMinutes / 60);
+  const minutes = normalizedMinutes % 60;
+
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+};
+
+const fromDisplayTime = (value = '') => {
+  const trimmedValue = String(value).trim();
+  const match = trimmedValue.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) {
+    return /^\d{2}:\d{2}$/.test(trimmedValue) ? trimmedValue : '';
+  }
+
+  let hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const suffix = match[3].toUpperCase();
+
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+    return '';
+  }
+
+  if (suffix === 'PM' && hours !== 12) hours += 12;
+  if (suffix === 'AM' && hours === 12) hours = 0;
+
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+};
+
+const parseSlotTime = (time = '') => {
+  const match = String(time).match(/^(.+?)\s*-\s*(.+)$/);
+  const startTime = match ? fromDisplayTime(match[1]) : '';
+  const endTime = match ? fromDisplayTime(match[2]) : '';
+
+  return {
+    startTime,
+    endTime,
+    time: String(time || '').trim(),
+  };
+};
+
 const createEmptySlot = () => ({
-  time: '',
+  startTime: '10:00',
+  endTime: '10:30',
   fee: '',
 });
 
@@ -32,7 +95,14 @@ const DoctorSlotsManager = () => {
       const response = await api.get(`/appointments/schedule?doctorId=${user.id}&date=${selectedDate}`);
       const existingSlots = response.data?.data?.schedule?.slots || [];
       setSavedSlots(existingSlots);
-      setSlots(existingSlots.length ? existingSlots.map((slot) => ({ time: slot.time, fee: slot.fee })) : [createEmptySlot()]);
+      setSlots(
+        existingSlots.length
+          ? existingSlots.map((slot) => ({
+              ...parseSlotTime(slot.time),
+              fee: slot.fee,
+            }))
+          : [createEmptySlot()]
+      );
     } catch (error) {
       setSavedSlots([]);
       setSlots([createEmptySlot()]);
@@ -43,7 +113,16 @@ const DoctorSlotsManager = () => {
 
   const updateSlot = (index, field, value) => {
     setSlots((current) =>
-      current.map((slot, slotIndex) => (slotIndex === index ? { ...slot, [field]: value } : slot))
+      current.map((slot, slotIndex) => {
+        if (slotIndex !== index) return slot;
+
+        const nextSlot = { ...slot, [field]: value };
+        if (field === 'startTime' && (!nextSlot.endTime || nextSlot.endTime <= value)) {
+          nextSlot.endTime = addMinutes(value, 30);
+        }
+
+        return nextSlot;
+      })
     );
   };
 
@@ -58,14 +137,28 @@ const DoctorSlotsManager = () => {
 
   const saveSlots = async () => {
     const normalizedSlots = slots
-      .map((slot) => ({
-        time: slot.time.trim(),
-        fee: Number(slot.fee),
-      }))
-      .filter((slot) => slot.time && Number.isFinite(slot.fee) && slot.fee >= 0);
+      .map((slot) => {
+        const time =
+          slot.startTime && slot.endTime
+            ? `${toDisplayTime(slot.startTime)} - ${toDisplayTime(slot.endTime)}`
+            : String(slot.time || '').trim();
+
+        return {
+          time,
+          fee: Number(slot.fee),
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+        };
+      })
+      .filter((slot) => {
+        const feeIsValid = Number.isFinite(slot.fee) && slot.fee >= 0;
+        const timeIsValid = slot.startTime && slot.endTime ? slot.endTime > slot.startTime : Boolean(slot.time);
+        return feeIsValid && timeIsValid;
+      })
+      .map(({ time, fee }) => ({ time, fee }));
 
     if (!normalizedSlots.length) {
-      toast.error('Add at least one valid slot before saving.');
+      toast.error('Add at least one valid slot with start time, end time, and fee.');
       return;
     }
 
@@ -127,15 +220,30 @@ const DoctorSlotsManager = () => {
             {slots.map((slot, index) => (
               <div
                 key={`${selectedDate}-${index}`}
-                className="grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 p-4 md:grid-cols-[1fr_180px_auto] dark:border-gray-700"
+                className="grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 p-4 md:grid-cols-[1fr_1fr_160px_auto] dark:border-gray-700"
               >
-                <input
-                  type="text"
-                  placeholder="e.g. 10:00 AM - 10:30 AM"
-                  value={slot.time}
-                  onChange={(e) => updateSlot(index, 'time', e.target.value)}
-                  className="rounded-xl border border-gray-300 px-4 py-3 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                />
+                <label className="space-y-1">
+                  <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    Start
+                  </span>
+                  <input
+                    type="time"
+                    value={slot.startTime}
+                    onChange={(e) => updateSlot(index, 'startTime', e.target.value)}
+                    className="w-full rounded-xl border border-gray-300 px-4 py-3 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    End
+                  </span>
+                  <input
+                    type="time"
+                    value={slot.endTime}
+                    onChange={(e) => updateSlot(index, 'endTime', e.target.value)}
+                    className="w-full rounded-xl border border-gray-300 px-4 py-3 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  />
+                </label>
                 <input
                   type="number"
                   min="0"
