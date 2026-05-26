@@ -40,6 +40,10 @@ const rewardSchema = new mongoose.Schema({
     healthEntryId: mongoose.Schema.Types.ObjectId,
     badgeId: String,
     badgePoints: Number,
+    premiumFeatureId: String,
+    premiumFeatureName: String,
+    accessUntil: Date,
+    accessType: String,
     takenAt: Date,
     entryType: String,
     medicationName: String

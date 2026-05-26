@@ -9,6 +9,8 @@ router.get('/points', rewardController.getPoints);
 router.get('/badges', rewardController.getBadges);
 router.get('/offers', rewardController.getPartnerOffers);
 router.post('/redeem/:offerId', rewardController.redeemOffer);
+router.get('/premium', rewardController.getPremiumRewards);
+router.post('/premium/unlock/:featureId', rewardController.unlockPremiumReward);
 router.get('/leaderboard', rewardController.getLeaderboard);
 router.get('/history', rewardController.getRewardHistory);
 

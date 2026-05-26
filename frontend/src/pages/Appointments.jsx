@@ -53,12 +53,12 @@ const Appointments = () => {
       path: '/appointments/slots'
     },
     {
-      id: 'medicine-discounts',
-      title: 'Medicine Discounts',
-      description: 'Redeem reward points for medicine website discount codes',
+      id: 'premium-rewards',
+      title: 'Premium Rewards',
+      description: 'Use reward points to unlock premium app features',
       icon: <FiGift className="w-8 h-8" />,
-      color: 'from-emerald-500 to-teal-600',
-      path: '/medicine-discounts'
+      color: 'from-indigo-500 to-blue-600',
+      path: '/premium-rewards'
     }
   ];
 

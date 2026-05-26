@@ -312,7 +312,7 @@ const Navbar = () => {
     { to: "/medications", label: "Medications", icon: FaPills },
     { to: "/schedule", label: "Schedule", icon: FiCalendar },
     { to: "/analytics", label: "Analytics", icon: FiActivity },
-    { to: "/medicine-discounts", label: "Medicine Discounts", icon: FiGift },
+    { to: "/premium-rewards", label: "Premium Rewards", icon: FiGift },
   ];
 
   const navItems = isDoctor ? sharedNavItems : [...patientNavItems, ...sharedNavItems];

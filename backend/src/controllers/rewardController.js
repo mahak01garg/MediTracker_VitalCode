@@ -5,6 +5,103 @@ const { RewardService } = require('../services/reward');
 // Initialize the service
 const rewardService = new RewardService();
 
+const premiumRewards = [
+    {
+        id: 'advanced_analytics_7d',
+        title: 'Advanced Analytics Plus',
+        category: 'Analytics',
+        description: 'Unlock deeper adherence trends, consistency score, and medication pattern insights for 7 days.',
+        pointsRequired: 80,
+        accessType: '7 days',
+        durationDays: 7,
+        benefit: 'Advanced charts and insights'
+    },
+    {
+        id: 'ai_health_insights_7d',
+        title: 'AI Health Insights Plus',
+        category: 'AI',
+        description: 'Unlock personalized weekly health suggestions, missed-dose pattern notes, and doctor visit prompts for 7 days.',
+        pointsRequired: 120,
+        accessType: '7 days',
+        durationDays: 7,
+        benefit: 'Premium AI guidance'
+    },
+    {
+        id: 'health_report_export',
+        title: 'Health Report Export',
+        category: 'Reports',
+        description: 'Unlock one premium downloadable health report with medication history, adherence summary, and appointments.',
+        pointsRequired: 150,
+        accessType: 'One report',
+        durationDays: 0,
+        benefit: 'PDF health report'
+    },
+    {
+        id: 'emergency_card_lifetime',
+        title: 'Emergency Medical Card',
+        category: 'Safety',
+        description: 'Unlock a shareable emergency card with medicines, allergies, conditions, and emergency contact details.',
+        pointsRequired: 200,
+        accessType: 'Lifetime',
+        durationDays: null,
+        benefit: 'Shareable emergency card'
+    },
+    {
+        id: 'appointment_discount_voucher',
+        title: 'Appointment Discount Voucher',
+        category: 'Appointments',
+        description: 'Unlock a voucher that can be used as an appointment fee discount in the next payment flow.',
+        pointsRequired: 300,
+        accessType: 'One appointment',
+        durationDays: 30,
+        benefit: 'Appointment fee discount'
+    }
+];
+
+const buildPremiumRewardsPayload = async (userId, currentPoints) => {
+    const unlockRecords = await Reward.find({
+        userId,
+        redeemed: true,
+        'metadata.premiumFeatureId': { $exists: true }
+    }).sort({ redeemedAt: -1 });
+
+    const now = new Date();
+    const unlockLookup = new Map();
+    unlockRecords.forEach((record) => {
+        const featureId = record.metadata?.premiumFeatureId;
+        if (!featureId || unlockLookup.has(featureId)) return;
+
+        const accessUntil = record.metadata?.accessUntil || null;
+        const isActive = !accessUntil || accessUntil >= now;
+
+        unlockLookup.set(featureId, {
+            isUnlocked: isActive,
+            unlockedAt: record.redeemedAt,
+            accessUntil,
+            rewardId: record._id
+        });
+    });
+
+    const features = premiumRewards.map((feature) => {
+        const unlock = unlockLookup.get(feature.id);
+        return {
+            ...feature,
+            isUnlocked: Boolean(unlock?.isUnlocked),
+            unlockedAt: unlock?.unlockedAt || null,
+            accessUntil: unlock?.accessUntil || null,
+            canUnlock: currentPoints >= feature.pointsRequired && !unlock?.isUnlocked,
+            pointsShort: Math.max(feature.pointsRequired - currentPoints, 0)
+        };
+    });
+
+    return {
+        currentPoints,
+        features,
+        unlockedFeatures: features.filter((feature) => feature.isUnlocked),
+        unlockableFeatures: features.filter((feature) => feature.canUnlock)
+    };
+};
+
 exports.getPoints = async (req, res) => {
     try {
         const user = await User.findById(req.user.id)
@@ -208,6 +305,90 @@ exports.redeemOffer = async (req, res) => {
         if (error.message.includes('Insufficient points') || error.message.includes('already redeemed')) {
             return res.status(400).json({ error: error.message });
         }
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+exports.getPremiumRewards = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('rewardPoints');
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const payload = await buildPremiumRewardsPayload(req.user.id, user.rewardPoints || 0);
+        res.json(payload);
+    } catch (error) {
+        console.error('Get premium rewards error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+exports.unlockPremiumReward = async (req, res) => {
+    try {
+        const { featureId } = req.params;
+        const feature = premiumRewards.find((item) => item.id === featureId);
+
+        if (!feature) {
+            return res.status(404).json({ error: 'Premium feature not found' });
+        }
+
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const currentPayload = await buildPremiumRewardsPayload(req.user.id, user.rewardPoints || 0);
+        const currentFeature = currentPayload.features.find((item) => item.id === featureId);
+
+        if (currentFeature?.isUnlocked) {
+            return res.status(400).json({ error: 'This premium feature is already unlocked' });
+        }
+
+        if ((user.rewardPoints || 0) < feature.pointsRequired) {
+            return res.status(400).json({
+                error: `Insufficient points. Required: ${feature.pointsRequired}, Available: ${user.rewardPoints || 0}`
+            });
+        }
+
+        const accessUntil =
+            typeof feature.durationDays === 'number' && feature.durationDays > 0
+                ? new Date(Date.now() + feature.durationDays * 24 * 60 * 60 * 1000)
+                : null;
+
+        user.rewardPoints = (user.rewardPoints || 0) - feature.pointsRequired;
+        await user.save();
+
+        const reward = await Reward.create({
+            userId: req.user.id,
+            points: -feature.pointsRequired,
+            type: 'redemption',
+            description: `Unlocked premium feature: ${feature.title}`,
+            redeemed: true,
+            redeemedAt: new Date(),
+            metadata: {
+                premiumFeatureId: feature.id,
+                premiumFeatureName: feature.title,
+                accessUntil,
+                accessType: feature.accessType
+            }
+        });
+
+        const payload = await buildPremiumRewardsPayload(req.user.id, user.rewardPoints || 0);
+
+        res.json({
+            message: `${feature.title} unlocked successfully`,
+            feature: {
+                ...feature,
+                isUnlocked: true,
+                unlockedAt: reward.redeemedAt,
+                accessUntil
+            },
+            remainingPoints: user.rewardPoints || 0,
+            rewards: payload
+        });
+    } catch (error) {
+        console.error('Unlock premium reward error:', error);
         res.status(500).json({ error: 'Server error' });
     }
 };

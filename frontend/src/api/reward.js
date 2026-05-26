@@ -13,4 +13,12 @@ export const rewardAPI = {
     const res = await axios.post(`/rewards/redeem/${offerId}`);
     return res.data;
   },
+  getPremiumRewards: async () => {
+    const res = await axios.get("/rewards/premium");
+    return res.data;
+  },
+  unlockPremiumReward: async (featureId) => {
+    const res = await axios.post(`/rewards/premium/unlock/${featureId}`);
+    return res.data;
+  },
 };

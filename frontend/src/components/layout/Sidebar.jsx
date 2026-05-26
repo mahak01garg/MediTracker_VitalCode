@@ -266,7 +266,7 @@ const Sidebar = () => {
         { id: 'medications', label: 'Medications', icon: <FaPills className="w-5 h-5" />, path: '/medications' },
         { id: 'schedule', label: 'Schedule', icon: <FiCalendar className="w-5 h-5" />, path: '/schedule' },
         { id: 'analytics', label: 'Analytics', icon: <FiTrendingUp className="w-5 h-5" />, path: '/analytics' },
-        { id: 'medicine-discounts', label: 'Medicine Discounts', icon: <FiGift className="w-5 h-5" />, path: '/medicine-discounts' },
+        { id: 'premium-rewards', label: 'Premium Rewards', icon: <FiGift className="w-5 h-5" />, path: '/premium-rewards' },
     ];
     const visibleMainMenuItems = isDoctor ? mainMenuItems : [...patientMenuItems, ...mainMenuItems];
 

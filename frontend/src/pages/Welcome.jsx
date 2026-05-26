@@ -72,7 +72,7 @@ const Welcome = () => {
               </div>
               <div className="flex items-start rounded-xl bg-white/15 p-3 text-sm">
                 <FiGift className="mr-3 mt-1 h-5 w-5" />
-                <p>Reward points can unlock medicine website discount codes.</p>
+                <p>Reward points can unlock premium tools inside the app.</p>
               </div>
               <div className="flex items-start rounded-xl bg-white/15 p-3 text-sm">
                 <FiMapPin className="mr-3 mt-1 h-5 w-5" />
