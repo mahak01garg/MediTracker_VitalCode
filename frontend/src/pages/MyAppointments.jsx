@@ -127,9 +127,16 @@ const MyAppointments = () => {
         name: 'MediTracker',
         description: `Appointment with Dr. ${formatDoctorName(appointment.doctorId?.name || '')}`,
         order_id: orderData.orderId,
+        method: {
+          upi: true,
+          card: true,
+          netbanking: true,
+          wallet: true,
+        },
         prefill: {
           name: user?.name || '',
           email: user?.email || '',
+          contact: user?.phone || '',
         },
         theme: {
           color: '#4f46e5',

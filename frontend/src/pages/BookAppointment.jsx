@@ -115,9 +115,16 @@ const BookAppointment = () => {
         name: 'MediTracker',
         description: `Appointment with Dr. ${formatDoctorName(doctor?.name || '')}`,
         order_id: orderData.orderId,
+        method: {
+          upi: true,
+          card: true,
+          netbanking: true,
+          wallet: true,
+        },
         prefill: {
           name: currentUser?.name || '',
           email: currentUser?.email || '',
+          contact: currentUser?.phone || '',
         },
         theme: {
           color: '#0891b2',
