@@ -28,7 +28,7 @@ const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
     
-    const from = location.state?.from?.pathname || '/';
+    const from = location.state?.from?.pathname || '/dashboard';
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -63,18 +63,34 @@ const handleGoogleLoginWithPopupArchive = async () => {
     const result = await signInWithPopup(auth, provider);
 
     // 🔥 Step 3: Get user
-    const user = result.user;
+    const idToken = await result.user.getIdToken(true);
 
-    console.log("Google User:", user);
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/google`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+        },
+    });
+
+    const data = await response.json();
+    console.log("Backend response:", response.status, data);
+
+    if (!response.ok) {
+        throw new Error(data.message || "Backend Google auth failed");
+    }
 
     // 🔥 Step 4: Save user (frontend state)
-    setUser(user);
+    setUser(data.user);
 
     // 🔥 Step 5: Save in localStorage
-    localStorage.setItem("user", JSON.stringify(user));
+    localStorage.setItem('token', data.token);
+    localStorage.setItem("user", JSON.stringify(data.user));
 
     // 🔥 Step 6: Notifications (optional)
-    await requestNotificationPermission();
+    requestNotificationPermission().catch((error) => {
+        console.warn("Notification setup after Google login failed:", error);
+    });
 
     // 🔥 Step 7: Redirect
     navigate(from, { replace: true });
@@ -181,7 +197,7 @@ const handleGoogleLoginWithPopupArchive = async () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const handleGoogleLogin = async () => {
+    const RedirectGoogleLogin = async () => {
         try {
             setFormError("");
             setLoading(true);
@@ -294,7 +310,7 @@ const handleGoogleLoginWithPopupArchive = async () => {
                                 </div>
                             </div>
 
-                            <Button type="button" variant="outline" size="large" fullWidth onClick={handleGoogleLogin} disabled={role === 'doctor'}>
+                            <Button type="button" variant="outline" size="large" fullWidth onClick={handleGoogleLoginWithPopupArchive} disabled={role === 'doctor'}>
                                 <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
                                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
