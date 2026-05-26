@@ -5,7 +5,7 @@ export const APP_CONSTANTS = {
     SUPPORT_EMAIL: 'mahakgarg197@gmail.com',
     SUPPORT_CONTACTS: [
         { name: 'Mahak Garg', email: 'mahakgarg197@gmail.com' },
-        { name: 'Palak Sharma', email: 'palakcbse2023@gmail.com' }
+        { name: 'Palak Sharma', email: 'palaksharma1076@gmail.com' }
     ],
     SUPPORT_PHONE: '+1-800-MED-TRACK',
     COMPANY_NAME: 'MediTracker Health Inc.',

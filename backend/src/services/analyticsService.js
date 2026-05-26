@@ -4,6 +4,7 @@ const Medication = require('../models/Medication');
 const SideEffect = require('../models/SideEffect');
 const User = require('../models/User');
 const logger = require('../utils/logger');
+const { getZonedDayRange } = require('../utils/timezone');
 
 class AnalyticsService {
   // Get dashboard overview
@@ -130,24 +131,26 @@ class AnalyticsService {
   // Get consumption trends
   async getConsumptionTrends(userId, filters = {}) {
     try {
-      const { period = 'week', medicationId } = filters;
-      
-      const endDate = new Date();
-      let startDate = new Date();
-      
-      switch (period) {
-        case 'week':
-          startDate.setDate(startDate.getDate() - 7);
-          break;
-        case 'month':
-          startDate.setMonth(startDate.getMonth() - 1);
-          break;
-        case 'quarter':
-          startDate.setMonth(startDate.getMonth() - 3);
-          break;
-        case 'year':
-          startDate.setFullYear(startDate.getFullYear() - 1);
-          break;
+      const { period = 'week', medicationId, startDate: filterStartDate, endDate: filterEndDate } = filters;
+
+      const endDate = filterEndDate ? new Date(filterEndDate) : new Date();
+      let startDate = filterStartDate ? new Date(filterStartDate) : new Date(endDate);
+
+      if (!filterStartDate) {
+        switch (period) {
+          case 'week':
+            startDate.setDate(startDate.getDate() - 7);
+            break;
+          case 'month':
+            startDate.setMonth(startDate.getMonth() - 1);
+            break;
+          case 'quarter':
+            startDate.setMonth(startDate.getMonth() - 3);
+            break;
+          case 'year':
+            startDate.setFullYear(startDate.getFullYear() - 1);
+            break;
+        }
       }
 
       const matchStage = {
@@ -166,7 +169,8 @@ class AnalyticsService {
             _id: {
               $dateToString: {
                 format: '%Y-%m-%d',
-                date: '$scheduledTime'
+                date: '$scheduledTime',
+                timezone: 'Asia/Kolkata'
               }
             },
             doses: { $push: '$$ROOT' },
@@ -330,7 +334,10 @@ class AnalyticsService {
       startDate.setMonth(startDate.getMonth() - 1);
 
       const medicationFilter = medications.length > 0
-        ? { _id: { $in: medications.map(id => new mongoose.Types.ObjectId(id)) } }
+        ? {
+            userId: new mongoose.Types.ObjectId(userId),
+            _id: { $in: medications.map(id => new mongoose.Types.ObjectId(id)) }
+          }
         : { userId: new mongoose.Types.ObjectId(userId) };
 
       // Get medications with their adherence rates
@@ -346,6 +353,7 @@ class AnalyticsService {
           });
 
           const doses = await Dose.find({
+            userId: new mongoose.Types.ObjectId(userId),
             medicationId: medication._id,
             scheduledTime: { $gte: startDate, $lte: endDate }
           });
@@ -364,7 +372,7 @@ class AnalyticsService {
             missedDoses: missedDoses.length,
             complianceScore: this._calculateComplianceScore(medication, takenDoses, missedDoses),
             lastTaken: takenDoses.length > 0
-              ? Math.max(...takenDoses.map(d => d.actualTakenTime || d.scheduledTime))
+              ? Math.max(...takenDoses.map(d => d.actualTime || d.scheduledTime))
               : null
           };
         })
@@ -425,13 +433,13 @@ class AnalyticsService {
       const doses = await Dose.find({
         userId,
         status: 'taken',
-        actualTakenTime: { $exists: true }
+        actualTime: { $exists: true }
       }).sort({ scheduledTime: 1 }).limit(100);
 
       if (doses.length > 10) {
         const timeDeviations = doses.map(dose => {
           const scheduled = new Date(dose.scheduledTime);
-          const actual = new Date(dose.actualTakenTime);
+          const actual = new Date(dose.actualTime);
           return Math.abs(actual - scheduled) / (1000 * 60); // minutes difference
         });
 
@@ -645,7 +653,7 @@ class AnalyticsService {
     const end = new Date(endDate);
 
     while (currentDate <= end) {
-      const dateStr = currentDate.toISOString().split('T')[0];
+      const dateStr = this._formatDateKey(currentDate);
       const existingData = trends.find(t => t.date === dateStr);
       
       filled.push({
@@ -660,6 +668,22 @@ class AnalyticsService {
     }
 
     return filled;
+  }
+
+  _formatDateKey(date, timeZone = 'Asia/Kolkata') {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(date);
+
+    const values = parts.reduce((acc, part) => {
+      if (part.type !== 'literal') acc[part.type] = part.value;
+      return acc;
+    }, {});
+
+    return `${values.year}-${values.month}-${values.day}`;
   }
 
   _calculateTrendsSummary(trends) {
@@ -679,8 +703,10 @@ class AnalyticsService {
       totalMissed: trends.reduce((sum, day) => sum + day.missedCount, 0),
       averageAdherence: parseFloat(averageAdherence.toFixed(1)),
       avgDailyAdherence: parseFloat(avgAdherence.toFixed(1)),
-      highestAdherence: Math.max(...trends.map(t => t.adherenceRate)),
-      lowestAdherence: Math.min(...trends.filter(t => t.totalDoses > 0).map(t => t.adherenceRate))
+      highestAdherence: trends.length ? Math.max(...trends.map(t => t.adherenceRate)) : 0,
+      lowestAdherence: trends.some(t => t.totalDoses > 0)
+        ? Math.min(...trends.filter(t => t.totalDoses > 0).map(t => t.adherenceRate))
+        : 0
     };
   }
 
@@ -698,7 +724,7 @@ class AnalyticsService {
 
     // Consider timing consistency for taken doses
     if (takenDoses.length > 1) {
-      const times = takenDoses.map(d => new Date(d.actualTakenTime || d.scheduledTime).getTime());
+      const times = takenDoses.map(d => new Date(d.actualTime || d.scheduledTime).getTime());
       times.sort((a, b) => a - b);
       
       let totalDeviation = 0;
@@ -757,7 +783,7 @@ class AnalyticsService {
     csv += 'DOSES\n';
     csv += 'Scheduled Time,Medication,Status,Actual Taken Time,Notes\n';
     doses.forEach(dose => {
-      csv += `${dose.scheduledTime},${dose.medicationId},${dose.status},${dose.actualTakenTime || ''},"${dose.notes || ''}"\n`;
+      csv += `${dose.scheduledTime},${dose.medicationId},${dose.status},${dose.actualTime || ''},"${dose.notes || ''}"\n`;
     });
     
     csv += '\n\nMEDICATIONS\n';
@@ -783,10 +809,7 @@ class AnalyticsService {
   }
 
   async _getTodayDoses(userId) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const { start: today, end: tomorrow } = getZonedDayRange(new Date(), 'Asia/Kolkata');
 
     const doses = await Dose.find({
       userId,
@@ -796,7 +819,7 @@ class AnalyticsService {
     return {
       total: doses.length,
       taken: doses.filter(d => d.status === 'taken').length,
-      upcoming: doses.filter(d => d.status === 'scheduled').length,
+      upcoming: doses.filter(d => d.status === 'pending' || d.status === 'snoozed').length,
       missed: doses.filter(d => d.status === 'missed').length,
       doses: doses.slice(0, 5) // Return only first 5 for display
     };
@@ -834,7 +857,7 @@ class AnalyticsService {
 
     const doses = await Dose.find({
       userId,
-      status: 'scheduled',
+      status: { $in: ['pending', 'snoozed'] },
       scheduledTime: { $gte: now, $lte: threeHoursLater }
     })
     .populate('medicationId', 'name dosage')
@@ -869,9 +892,8 @@ class AnalyticsService {
 
     // Calculate current streak
     let currentStreak = 0;
-    const today = new Date().toDateString();
     let currentDate = new Date().toDateString();
-    const takenDates = [...new Set(doses.map(d => new Date(d.actualTakenTime || d.scheduledTime).toDateString()))].sort().reverse();
+    const takenDates = [...new Set(doses.map(d => new Date(d.actualTime || d.scheduledTime).toDateString()))].sort().reverse();
 
     for (const dateStr of takenDates) {
       if (dateStr === currentDate || (currentStreak > 0 && this._isPreviousDay(dateStr, currentDate))) {
@@ -898,7 +920,7 @@ class AnalyticsService {
     return {
       currentStreak,
       longestStreak: Math.max(longestStreak, currentLongest),
-      lastTaken: doses[0]?.actualTakenTime || doses[0]?.scheduledTime
+      lastTaken: doses[0]?.actualTime || doses[0]?.scheduledTime
     };
   }
 

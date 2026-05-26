@@ -9,6 +9,7 @@ import {
   Card,
   CardContent,
   Grid,
+  Button,
 } from "@mui/material";
 import { Insights, Timeline, BarChart } from "@mui/icons-material";
 import {
@@ -66,8 +67,7 @@ const AnalyticsDashboard = () => {
   const [trends, setTrends] = useState([]);
   const [comparison, setComparison] = useState([]);
 
-  useEffect(() => {
-    const loadData = async () => {
+  const loadData = async () => {
       setLoading(true);
       setError("");
 
@@ -95,6 +95,8 @@ const AnalyticsDashboard = () => {
       }
     };
 
+  useEffect(() => {
+
     loadData();
   }, []);
 
@@ -113,6 +115,11 @@ const AnalyticsDashboard = () => {
           Analytics Dashboard
         </Typography>
         <PageDoodle type="analytics" className="hidden md:block" />
+      </Box>
+      <Box display="flex" justifyContent="flex-end" mb={2}>
+        <Button variant="outlined" onClick={loadData} disabled={loading}>
+          Refresh analytics
+        </Button>
       </Box>
 
       {error ? (

@@ -1,11 +1,26 @@
-const API_URL = import.meta.env.VITE_API_URL;
+const getApiUrl = () => {
+  const configured =
+    import.meta.env.VITE_API_URL ||
+    import.meta.env.VITE_API_BASE_URL ||
+    "/api";
+
+  return configured.replace(/\/$/, "");
+};
+
+const API_URL = getApiUrl();
 
 const authHeader = () => {
   const token = localStorage.getItem("token");
-  return {
+  const headers = {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
+    "X-Timezone": Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata",
   };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return headers;
 };
 
 // Add a reusable fetch wrapper
@@ -17,8 +32,7 @@ const fetchWithAuth = async (url, options = {}) => {
         ...authHeader(),
         ...options.headers,
       },
-      mode: 'cors', // Explicitly set CORS mode
-      credentials: 'include', // Important for cookies/auth
+      mode: 'cors',
     });
 
     console.log(`API Response for ${url}:`, response.status, response.statusText);
@@ -26,8 +40,17 @@ const fetchWithAuth = async (url, options = {}) => {
     // Handle HTTP error status
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`HTTP Error ${response.status}:`, errorText);
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
+      let message = errorText;
+
+      try {
+        const parsed = JSON.parse(errorText);
+        message = parsed.message || parsed.error || message;
+      } catch {
+        // Keep the plain response text when the server did not return JSON.
+      }
+
+      console.error(`HTTP Error ${response.status}:`, message);
+      throw new Error(message || `Request failed with status ${response.status}`);
     }
 
     const data = await response.json();

@@ -61,11 +61,13 @@ class AnalyticsController {
   async getConsumptionTrends(req, res) {
     try {
       const { userId } = req;
-      const { period, medicationId } = req.query;
-      
+      const { period, medicationId, startDate, endDate } = req.query;
+
       const trends = await AnalyticsService.getConsumptionTrends(userId, {
         period: period || 'week',
-        medicationId
+        medicationId,
+        startDate,
+        endDate
       });
       
       res.status(200).json({
