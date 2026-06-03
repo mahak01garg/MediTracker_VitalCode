@@ -386,12 +386,14 @@ exports.googleAuth = async (req, res) => {
       let doctor = await Doctor.findOne({ googleId: uid });
 
       if (!doctor) {
-        doctor = await Doctor.findOne({ email: normalizedEmail });
+        doctor = await Doctor.findOne({
+          email: { $regex: `^${normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' },
+        });
       }
 
       if (!doctor) {
         return res.status(404).json({
-          message: "No doctor account found for this Google email. Please register as a doctor first.",
+          message: `No doctor account found for ${normalizedEmail}. Please use the Google account registered as a doctor, or register as a doctor first.`,
         });
       }
 

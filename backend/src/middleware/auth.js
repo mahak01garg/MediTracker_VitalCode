@@ -3,6 +3,17 @@ const User = require('../models/User');
 const Doctor = require('../models/doctor.models.js');
 const admin = require("../config/firebaseAdmin.js");
 
+const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || process.env.JWT_SECRET;
+
+const verifyToken = (token, secret) => {
+  if (!secret) return null;
+
+  try {
+    return jwt.verify(token, secret);
+  } catch {
+    return null;
+  }
+};
 
 const auth = async (req, res, next) => {
   try {
@@ -11,7 +22,11 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ error: 'No token provided, authorization denied' });
     }
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = verifyToken(token, process.env.JWT_SECRET) || verifyToken(token, ACCESS_TOKEN_SECRET);
+
+    if (!decoded) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
 
     if (decoded.userId) {
       const user = await User.findById(decoded.userId).select('-password');

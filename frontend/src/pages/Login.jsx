@@ -43,6 +43,20 @@ const Login = () => {
         }
     };
 
+    const saveGoogleSession = (data) => {
+        const googleUser = {
+            ...data.user,
+            role: String(data.user?.role || role).toLowerCase(),
+            id: data.user?.id || data.user?._id,
+            _id: data.user?._id || data.user?.id,
+        };
+
+        setUser(googleUser);
+        localStorage.setItem('token', data.token);
+        localStorage.setItem("user", JSON.stringify(googleUser));
+        return googleUser;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setFormError('');
@@ -98,12 +112,8 @@ const handleGoogleLoginWithPopupArchive = async () => {
     }
     validateGoogleLoginRole(data, loginRole);
 
-    // 🔥 Step 4: Save user (frontend state)
-    setUser(data.user);
-
-    // 🔥 Step 5: Save in localStorage
-    localStorage.setItem('token', data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
+    // 🔥 Step 4/5: Save user and token
+    const googleUser = saveGoogleSession(data);
 
     // 🔥 Step 6: Notifications (optional)
     requestNotificationPermission().catch((error) => {
@@ -111,7 +121,7 @@ const handleGoogleLoginWithPopupArchive = async () => {
     });
 
     // 🔥 Step 7: Redirect
-    navigate(data.user?.role === 'doctor' ? '/appointments' : from, { replace: true });
+    navigate(googleUser.role === 'doctor' ? '/appointments' : from, { replace: true });
 
   } catch (err) {
     console.error("❌ Google login error:", err);
@@ -152,11 +162,9 @@ const handleGoogleLoginWithPopupArchive = async () => {
         }
         validateGoogleLoginRole(data, loginRole);
 
-        setUser(data.user);
-        localStorage.setItem('token', data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
+        const googleUser = saveGoogleSession(data);
 
-        navigate(data.user?.role === 'doctor' ? '/appointments' : redirectPath, { replace: true });
+        navigate(googleUser.role === 'doctor' ? '/appointments' : redirectPath, { replace: true });
         requestNotificationPermission().catch((error) => {
             console.warn("Notification setup after Google login failed:", error);
         });
