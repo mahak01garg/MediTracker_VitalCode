@@ -55,6 +55,7 @@ const PremiumRewards = () => {
       accessType: feature?.accessType || 'One appointment',
       benefit: feature?.benefit || 'Appointment fee discount',
       discountPercent: feature?.discountPercent,
+      nextDiscountTier: feature?.nextDiscountTier || null,
       isUnlocked: Boolean(feature?.isUnlocked),
       unlockedAt: feature?.unlockedAt || null,
       accessUntil: feature?.accessUntil || null,
@@ -153,7 +154,7 @@ const PremiumRewards = () => {
           Doctor Appointment Discount
         </h1>
         <p className="relative z-10 max-w-2xl text-blue-50">
-          Redeem points for a real discount on your next unpaid doctor appointment.
+          Redeem points for a doctor appointment discount that increases with your reward balance.
         </p>
       </div>
 
@@ -230,9 +231,11 @@ const PremiumRewards = () => {
               <span className="mt-1 block text-2xl font-extrabold text-emerald-600">{pointsRequiredLabel}</span>
             </div>
             <div className="rounded-xl bg-slate-50 p-4 dark:bg-gray-900">
-              <span className="block text-gray-500 dark:text-gray-400">Status</span>
+              <span className="block text-gray-500 dark:text-gray-400">Next tier</span>
               <span className="mt-1 block text-lg font-extrabold text-gray-900 dark:text-white">
-                {discountFeature.isUnlocked ? formatAccessUntil(discountFeature.accessUntil) : 'Locked'}
+                {discountFeature.nextDiscountTier
+                  ? `${discountFeature.nextDiscountTier.discountPercent}% at ${discountFeature.nextDiscountTier.pointsRequired} pts`
+                  : 'Max discount reached'}
               </span>
             </div>
             <div className="rounded-xl bg-slate-50 p-4 dark:bg-gray-900">

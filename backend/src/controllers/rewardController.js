@@ -1,30 +1,26 @@
 const User = require('../models/User');
 const Reward = require('../models/Reward');
 const { RewardService } = require('../services/reward');
+const {
+    appointmentDiscountConfig,
+    getAppointmentDiscountPercentByPoints,
+    getNextAppointmentDiscountTier
+} = require('../utils/rewardDiscount');
 
 // Initialize the service
 const rewardService = new RewardService();
-const appointmentDiscountPercent = Number(process.env.APPOINTMENT_DISCOUNT_PERCENT || 20);
-const appointmentDiscountMaxPercent = Number(process.env.APPOINTMENT_DISCOUNT_MAX_PERCENT || 50);
-const appointmentDiscountPoints = Number(process.env.APPOINTMENT_DISCOUNT_POINTS || 50);
-
-const getAppointmentDiscountPercentByPoints = (points) => {
-    const currentPoints = Math.max(0, Number(points) || 0);
-    const extraPercent = Math.floor(Math.max(0, currentPoints - appointmentDiscountPoints) / 10) * 2;
-    return Math.min(appointmentDiscountPercent + extraPercent, appointmentDiscountMaxPercent);
-};
 
 const premiumRewards = [
     {
-        id: 'appointment_discount_voucher',
+        id: appointmentDiscountConfig.featureId,
         title: 'Doctor Appointment Discount',
         category: 'Appointments',
-        description: `Use reward points to unlock a discount on your next unpaid doctor appointment payment. Starts at ${appointmentDiscountPercent}% and increases with higher point balance up to ${appointmentDiscountMaxPercent}%`,
-        pointsRequired: appointmentDiscountPoints,
+        description: `Use reward points to unlock a discount on your next unpaid doctor appointment payment. The discount grows with your current point balance.`,
+        pointsRequired: appointmentDiscountConfig.minimumPoints,
         accessType: 'One appointment',
         durationDays: 30,
-        benefit: `${appointmentDiscountPercent}% appointment fee discount`,
-        discountPercent: appointmentDiscountPercent
+        benefit: `${appointmentDiscountConfig.basePercent}% appointment fee discount`,
+        discountPercent: appointmentDiscountConfig.basePercent
     }
 ];
 
@@ -60,12 +56,15 @@ const buildPremiumRewardsPayload = async (userId, currentPoints) => {
     const features = premiumRewards.map((feature) => {
         const unlock = unlockLookup.get(feature.id);
         const featureDiscountPercent = unlock?.discountPercent ?? getAppointmentDiscountPercentByPoints(currentPoints);
+        const nextDiscountTier = getNextAppointmentDiscountTier(currentPoints);
 
         return {
             ...feature,
             discountPercent: featureDiscountPercent,
             benefit: `${featureDiscountPercent}% appointment fee discount`,
             description: feature.description,
+            discountConfig: appointmentDiscountConfig,
+            nextDiscountTier,
             isUnlocked: Boolean(unlock?.isUnlocked),
             unlockedAt: unlock?.unlockedAt || null,
             accessUntil: unlock?.accessUntil || null,
@@ -363,6 +362,10 @@ exports.unlockPremiumReward = async (req, res) => {
             message: `${feature.title} unlocked successfully`,
             feature: {
                 ...feature,
+                discountPercent,
+                benefit: `${discountPercent}% appointment fee discount`,
+                discountConfig: appointmentDiscountConfig,
+                nextDiscountTier: getNextAppointmentDiscountTier(user.rewardPoints || 0),
                 isUnlocked: true,
                 unlockedAt: reward.redeemedAt,
                 accessUntil

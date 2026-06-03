@@ -5,6 +5,7 @@ const Client = require('../models/client.model.js');
 const User = require('../models/User.js');
 const Reward = require('../models/Reward.js');
 const crypto = require('crypto');
+const { getAppointmentDiscountFromReward } = require('../utils/rewardDiscount.js');
 
 const buildAssetUrl = (req, filePath) => {
   if (!filePath) return '';
@@ -55,8 +56,6 @@ const getRazorpayClient = () => {
   });
 };
 
-const DEFAULT_APPOINTMENT_DISCOUNT_PERCENT = Number(process.env.APPOINTMENT_DISCOUNT_PERCENT || 20);
-
 const findActiveAppointmentDiscount = async (patientId) => {
   const now = new Date();
   return Reward.findOne({
@@ -70,20 +69,6 @@ const findActiveAppointmentDiscount = async (patientId) => {
       { 'metadata.accessUntil': { $gte: now } },
     ],
   }).sort({ redeemedAt: 1 });
-};
-
-const getRewardDiscountPercent = (reward) => {
-  if (!reward || !reward.metadata) return 0;
-
-  const metadata = reward.metadata || {};
-  const rawPercent = metadata.discountPercent;
-  const fallbackPercent = metadata.premiumFeatureId === 'appointment_discount_voucher'
-    ? DEFAULT_APPOINTMENT_DISCOUNT_PERCENT
-    : 0;
-
-  const discountPercent = Number(rawPercent != null ? rawPercent : fallbackPercent);
-  if (!Number.isFinite(discountPercent)) return 0;
-  return Math.min(Math.max(discountPercent, 0), 100);
 };
 
 const requestSlot = async (req, res) => {
@@ -218,7 +203,7 @@ const createPaymentOrder = async (req, res) => {
     }
 
     const discountReward = await findActiveAppointmentDiscount(patientId);
-    const discountPercent = getRewardDiscountPercent(discountReward);
+    const discountPercent = getAppointmentDiscountFromReward(discountReward);
 
     if (discountReward && discountPercent > 0 && discountReward.metadata && discountReward.metadata.discountPercent == null) {
       discountReward.metadata.discountPercent = discountPercent;
