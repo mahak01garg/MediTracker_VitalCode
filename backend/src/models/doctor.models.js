@@ -26,6 +26,15 @@ const doctorSchema = new mongoose.Schema(
       type: String,
       required: [true, "Please add a password"],
     },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    isGoogleAuth: {
+      type: Boolean,
+      default: false,
+    },
     specialization: {
       type: String,
       required: true,

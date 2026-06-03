@@ -55,6 +55,7 @@ const handleGoogleLoginWithPopupArchive = async () => {
   try {
     setFormError("");
     setLoading(true);
+    const loginRole = role;
 
     // 🔥 Step 1: Google provider
     const provider = new GoogleAuthProvider();
@@ -71,6 +72,7 @@ const handleGoogleLoginWithPopupArchive = async () => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${idToken}`,
         },
+        body: JSON.stringify({ role: loginRole }),
     });
 
     const data = await response.json();
@@ -93,7 +95,7 @@ const handleGoogleLoginWithPopupArchive = async () => {
     });
 
     // 🔥 Step 7: Redirect
-    navigate(from, { replace: true });
+    navigate(data.user?.role === 'doctor' ? '/appointments' : from, { replace: true });
 
   } catch (err) {
     console.error("❌ Google login error:", err);
@@ -113,7 +115,7 @@ const handleGoogleLoginWithPopupArchive = async () => {
 };
 
 
-    const completeGoogleLogin = async (firebaseUser, redirectPath = from) => {
+    const completeGoogleLogin = async (firebaseUser, redirectPath = from, loginRole = role) => {
         const idToken = await firebaseUser.getIdToken(true);
 
         const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/google`, {
@@ -122,6 +124,7 @@ const handleGoogleLoginWithPopupArchive = async () => {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${idToken}`,
             },
+            body: JSON.stringify({ role: loginRole }),
         });
 
         const data = await response.json();
@@ -135,7 +138,7 @@ const handleGoogleLoginWithPopupArchive = async () => {
         localStorage.setItem('token', data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
 
-        navigate(redirectPath, { replace: true });
+        navigate(data.user?.role === 'doctor' ? '/appointments' : redirectPath, { replace: true });
         requestNotificationPermission().catch((error) => {
             console.warn("Notification setup after Google login failed:", error);
         });
@@ -155,11 +158,13 @@ const handleGoogleLoginWithPopupArchive = async () => {
 
                 const result = await getRedirectResult(auth);
                 const redirectPath = sessionStorage.getItem("googleLoginRedirectPath") || from;
+                const loginRole = sessionStorage.getItem("googleLoginRole") || role;
 
                 if (result?.user) {
                     sessionStorage.removeItem("googleLoginPending");
                     sessionStorage.removeItem("googleLoginRedirectPath");
-                    await completeGoogleLogin(result.user, redirectPath);
+                    sessionStorage.removeItem("googleLoginRole");
+                    await completeGoogleLogin(result.user, redirectPath, loginRole);
                     return;
                 }
 
@@ -176,12 +181,14 @@ const handleGoogleLoginWithPopupArchive = async () => {
 
                         sessionStorage.removeItem("googleLoginPending");
                         sessionStorage.removeItem("googleLoginRedirectPath");
+                        sessionStorage.removeItem("googleLoginRole");
                         unsubscribe?.();
-                        await completeGoogleLogin(firebaseUser, redirectPath);
+                        await completeGoogleLogin(firebaseUser, redirectPath, loginRole);
                     } catch (err) {
                         console.error("Google auth state login error:", err);
                         sessionStorage.removeItem("googleLoginPending");
                         sessionStorage.removeItem("googleLoginRedirectPath");
+                        sessionStorage.removeItem("googleLoginRole");
                         setFormError(err.message || "Google login failed");
                         setLoading(false);
                     }
@@ -190,6 +197,7 @@ const handleGoogleLoginWithPopupArchive = async () => {
                 console.error("Google redirect login error:", err);
                 sessionStorage.removeItem("googleLoginPending");
                 sessionStorage.removeItem("googleLoginRedirectPath");
+                sessionStorage.removeItem("googleLoginRole");
                 setFormError(err.message || "Google login failed");
                 setLoading(false);
             } finally {
@@ -214,11 +222,13 @@ const handleGoogleLoginWithPopupArchive = async () => {
             const provider = new GoogleAuthProvider();
             sessionStorage.setItem("googleLoginPending", "true");
             sessionStorage.setItem("googleLoginRedirectPath", from);
+            sessionStorage.setItem("googleLoginRole", role);
             await signInWithRedirect(auth, provider);
         } catch (err) {
             console.error("Google login error:", err);
             sessionStorage.removeItem("googleLoginPending");
             sessionStorage.removeItem("googleLoginRedirectPath");
+            sessionStorage.removeItem("googleLoginRole");
             const popupBlocked = err?.code === 'auth/popup-blocked';
             if (popupBlocked) {
                 setFormError('Google sign-in popup was blocked. Please allow popups and try again.');
@@ -326,7 +336,7 @@ const handleGoogleLoginWithPopupArchive = async () => {
                                 </div>
                             </div>
 
-                            <Button type="button" variant="outline" size="large" fullWidth onClick={handleGoogleLoginWithPopupArchive} disabled={role === 'doctor'}>
+                            <Button type="button" variant="outline" size="large" fullWidth onClick={handleGoogleLoginWithPopupArchive}>
                                 <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
                                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -335,11 +345,6 @@ const handleGoogleLoginWithPopupArchive = async () => {
                                 </svg>
                                 Continue with Google
                             </Button>
-                            {role === 'doctor' && (
-                                <p className="text-sm text-amber-700 dark:text-amber-300">
-                                    Google sign-in is available only for patient accounts.
-                                </p>
-                            )}
                         </form>
 
                         <p className="mt-8 text-center text-slate-600 dark:text-slate-300">

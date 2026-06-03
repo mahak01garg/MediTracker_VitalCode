@@ -374,19 +374,53 @@ exports.googleAuth = async (req, res) => {
     }
 
     const { uid, email, name } = req.user;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const normalizedRole = String(req.body?.role || 'patient').trim().toLowerCase();
+
+    if (!['patient', 'doctor'].includes(normalizedRole)) {
+      return res.status(400).json({ message: "Role must be either patient or doctor" });
+    }
+
+    if (normalizedRole === 'doctor') {
+      let doctor = await Doctor.findOne({ googleId: uid });
+
+      if (!doctor) {
+        doctor = await Doctor.findOne({ email: normalizedEmail });
+      }
+
+      if (!doctor) {
+        return res.status(404).json({
+          message: "No doctor account found for this Google email. Please register as a doctor first.",
+        });
+      }
+
+      if (!doctor.googleId) {
+        doctor.googleId = uid;
+        doctor.isGoogleAuth = true;
+        await doctor.save({ validateBeforeSave: false });
+      }
+
+      const token = doctor.generateAccessToken();
+
+      return res.status(200).json({
+        message: "Google authentication successful",
+        token,
+        user: serializeDoctor(doctor),
+      });
+    }
 
     // 1️⃣ Find by googleId
     let user = await User.findOne({ googleId: uid });
 
     // 2️⃣ If not found, try by email
     if (!user) {
-      user = await User.findOne({ email });
+      user = await User.findOne({ email: normalizedEmail });
     }
 
     // 3️⃣ Create user if not exists
     if (!user) {
       user = await User.create({
-        email,
+        email: normalizedEmail,
         name,
         googleId: uid,
         isGoogleAuth: true,
