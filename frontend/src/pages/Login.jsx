@@ -99,7 +99,6 @@ const handleGoogleLoginWithPopupArchive = async () => {
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${idToken}`,
-            'x-auth-role': loginRole,
         },
         body: JSON.stringify({ role: loginRole }),
     });
@@ -149,7 +148,6 @@ const handleGoogleLoginWithPopupArchive = async () => {
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${idToken}`,
-                'x-auth-role': loginRole,
             },
             body: JSON.stringify({ role: loginRole }),
         });
