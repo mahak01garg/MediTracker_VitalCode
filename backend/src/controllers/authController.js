@@ -26,6 +26,17 @@ const signUserToken = (userId) => jwt.sign(
     { expiresIn: getUserTokenExpiry() }
 );
 
+const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const findDoctorByEmail = (email) => {
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    if (!normalizedEmail) return null;
+
+    return Doctor.findOne({
+        email: { $regex: `^${escapeRegex(normalizedEmail)}$`, $options: 'i' },
+    });
+};
+
 const buildFileUrl = (req, filePath) => {
     if (!filePath) return '';
     if (/^https?:\/\//i.test(filePath)) return filePath;
@@ -270,8 +281,10 @@ exports.login = async (req, res) => {
             });
         }
 
+        const doctorWithEmail = await findDoctorByEmail(normalizedEmail);
+
         if (normalizedRole === 'doctor') {
-            const doctor = await Doctor.findOne({ email: normalizedEmail });
+            const doctor = doctorWithEmail;
             if (!doctor) {
                 return res.status(401).json({
                     success: false,
@@ -294,6 +307,13 @@ exports.login = async (req, res) => {
                 message: 'Login successful',
                 token: accessToken,
                 user: serializeDoctor(doctor)
+            });
+        }
+
+        if (doctorWithEmail) {
+            return res.status(403).json({
+                success: false,
+                error: 'This email belongs to a doctor account. Please choose Doctor Login.'
             });
         }
 
@@ -386,9 +406,7 @@ exports.googleAuth = async (req, res) => {
       let doctor = await Doctor.findOne({ googleId: uid });
 
       if (!doctor) {
-        doctor = await Doctor.findOne({
-          email: { $regex: `^${normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' },
-        });
+        doctor = await findDoctorByEmail(normalizedEmail);
       }
 
       if (!doctor) {
@@ -412,21 +430,19 @@ exports.googleAuth = async (req, res) => {
       });
     }
 
+    const doctorWithEmail = await findDoctorByEmail(normalizedEmail);
+    if (doctorWithEmail) {
+      return res.status(403).json({
+        message: "This Google email belongs to a doctor account. Please choose Doctor Login.",
+      });
+    }
+
     // 1️⃣ Find by googleId
     let user = await User.findOne({ googleId: uid });
 
     // 2️⃣ If not found, try by email
     if (!user) {
       user = await User.findOne({ email: normalizedEmail });
-    }
-
-    if (!user) {
-      const doctorWithEmail = await Doctor.findOne({ email: normalizedEmail });
-      if (doctorWithEmail) {
-        return res.status(409).json({
-          message: "This Google email belongs to a doctor account. Please choose Doctor Login.",
-        });
-      }
     }
 
     // 3️⃣ Create user if not exists
