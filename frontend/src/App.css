@@ -113,3 +113,34 @@ body.dark-mode button {
   background-color: #22c55e;
 }
 
+.dark .medication-form,
+.dark .medication-form h1,
+.dark .medication-form h2,
+.dark .medication-form h3 {
+  color: #f8fafc;
+}
+
+.dark .medication-form p,
+.dark .medication-form label {
+  color: #e2e8f0;
+}
+
+.dark .medication-form input:not([type="checkbox"]),
+.dark .medication-form select,
+.dark .medication-form textarea {
+  background-color: #1f2937 !important;
+  border-color: #475569 !important;
+  color: #f8fafc !important;
+  color-scheme: dark;
+}
+
+.dark .medication-form input::placeholder,
+.dark .medication-form textarea::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1;
+}
+
+.dark .medication-form select option {
+  background-color: #1f2937;
+  color: #f8fafc;
+}

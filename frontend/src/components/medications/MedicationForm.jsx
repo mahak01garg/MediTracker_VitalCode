@@ -270,7 +270,7 @@ const MedicationForm = ({ isEditing = false }) => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto">
+        <div className="medication-form max-w-4xl mx-auto">
             {/* Header remains the same */}
             <div className="mb-8 flex items-center mb-2">
                 <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-2 rounded-lg mr-3">
@@ -298,7 +298,7 @@ const MedicationForm = ({ isEditing = false }) => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <Input 
-                                label="Medication Name *" 
+                                label="Medication Name" 
                                 name="name" 
                                 value={formData.name} 
                                 onChange={handleInputChange} 
@@ -307,7 +307,7 @@ const MedicationForm = ({ isEditing = false }) => {
                                 required 
                             />
                             <Input 
-                                label="Dosage *" 
+                                label="Dosage" 
                                 name="dosage" 
                                 value={formData.dosage} 
                                 onChange={handleInputChange} 
