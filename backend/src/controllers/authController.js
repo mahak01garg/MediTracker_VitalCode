@@ -37,6 +37,15 @@ const findDoctorByEmail = (email) => {
     });
 };
 
+const findUserByEmail = (email) => {
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    if (!normalizedEmail) return null;
+
+    return User.findOne({
+        email: { $regex: `^${escapeRegex(normalizedEmail)}$`, $options: 'i' },
+    });
+};
+
 const buildFileUrl = (req, filePath) => {
     if (!filePath) return '';
     if (/^https?:\/\//i.test(filePath)) return filePath;
@@ -131,11 +140,18 @@ exports.register = async (req, res) => {
             return res.status(400).json({ error: 'Role must be either patient or doctor' });
         }
 
+        const existingDoctorWithEmail = await findDoctorByEmail(normalizedEmail);
+        const existingUserWithEmail = await findUserByEmail(normalizedEmail);
+
         if (normalizedRole === 'doctor') {
             if (!phone || !specialization || !experience || !degree || !age || !gender) {
                 return res.status(400).json({
                     error: 'Phone, specialization, experience, degree, age, and gender are required for doctor registration'
                 });
+            }
+
+            if (existingUserWithEmail) {
+                return res.status(400).json({ error: 'A patient account already exists with this email. Please use a different doctor email.' });
             }
 
             const existingDoctor = await Doctor.findOne({
@@ -170,9 +186,12 @@ exports.register = async (req, res) => {
             });
         }
 
+        if (existingDoctorWithEmail) {
+            return res.status(400).json({ error: 'This email is registered as a doctor. Please use Doctor Login.' });
+        }
+
         // Check if user exists
-        const existingUser = await User.findOne({ email: normalizedEmail });
-        if (existingUser) {
+        if (existingUserWithEmail) {
             return res.status(400).json({ error: 'User already exists' });
         }
 
@@ -318,7 +337,7 @@ exports.login = async (req, res) => {
         }
 
         // Find user by email
-        const user = await User.findOne({ email: normalizedEmail });
+        const user = await findUserByEmail(normalizedEmail);
         console.log('User found:', !!user);
         
         if (!user) {
@@ -430,6 +449,13 @@ exports.googleAuth = async (req, res) => {
       });
     }
 
+    const doctorWithGoogleId = await Doctor.findOne({ googleId: uid });
+    if (doctorWithGoogleId) {
+      return res.status(403).json({
+        message: "This Google account is linked to a doctor account. Please choose Doctor Login.",
+      });
+    }
+
     const doctorWithEmail = await findDoctorByEmail(normalizedEmail);
     if (doctorWithEmail) {
       return res.status(403).json({
@@ -442,7 +468,7 @@ exports.googleAuth = async (req, res) => {
 
     // 2️⃣ If not found, try by email
     if (!user) {
-      user = await User.findOne({ email: normalizedEmail });
+      user = await findUserByEmail(normalizedEmail);
     }
 
     // 3️⃣ Create user if not exists
