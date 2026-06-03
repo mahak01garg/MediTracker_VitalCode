@@ -29,6 +29,19 @@ const Login = () => {
     const location = useLocation();
     
     const from = location.state?.from?.pathname || '/dashboard';
+    const getGoogleAuthUrl = (loginRole) =>
+        `${import.meta.env.VITE_API_URL}/auth/google?role=${encodeURIComponent(loginRole)}`;
+
+    const validateGoogleLoginRole = (data, loginRole) => {
+        const returnedRole = String(data.user?.role || '').toLowerCase();
+        if (returnedRole !== loginRole) {
+            throw new Error(
+                loginRole === 'doctor'
+                    ? 'This Google account is not linked to a doctor account. Please choose the correct Doctor Google account.'
+                    : 'This Google account is not linked to a patient account. Please choose the correct Patient Google account.'
+            );
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -59,6 +72,7 @@ const handleGoogleLoginWithPopupArchive = async () => {
 
     // 🔥 Step 1: Google provider
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
 
     // 🔥 Step 2: Firebase popup login
     const result = await signInWithPopup(auth, provider);
@@ -66,11 +80,12 @@ const handleGoogleLoginWithPopupArchive = async () => {
     // 🔥 Step 3: Get user
     const idToken = await result.user.getIdToken(true);
 
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/google`, {
+    const response = await fetch(getGoogleAuthUrl(loginRole), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${idToken}`,
+            'x-auth-role': loginRole,
         },
         body: JSON.stringify({ role: loginRole }),
     });
@@ -81,6 +96,7 @@ const handleGoogleLoginWithPopupArchive = async () => {
     if (!response.ok) {
         throw new Error(data.message || "Backend Google auth failed");
     }
+    validateGoogleLoginRole(data, loginRole);
 
     // 🔥 Step 4: Save user (frontend state)
     setUser(data.user);
@@ -118,11 +134,12 @@ const handleGoogleLoginWithPopupArchive = async () => {
     const completeGoogleLogin = async (firebaseUser, redirectPath = from, loginRole = role) => {
         const idToken = await firebaseUser.getIdToken(true);
 
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/google`, {
+        const response = await fetch(getGoogleAuthUrl(loginRole), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${idToken}`,
+                'x-auth-role': loginRole,
             },
             body: JSON.stringify({ role: loginRole }),
         });
@@ -133,6 +150,7 @@ const handleGoogleLoginWithPopupArchive = async () => {
         if (!response.ok) {
             throw new Error(data.message || "Backend Google auth failed");
         }
+        validateGoogleLoginRole(data, loginRole);
 
         setUser(data.user);
         localStorage.setItem('token', data.token);
@@ -220,6 +238,7 @@ const handleGoogleLoginWithPopupArchive = async () => {
             setLoading(true);
 
             const provider = new GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
             sessionStorage.setItem("googleLoginPending", "true");
             sessionStorage.setItem("googleLoginRedirectPath", from);
             sessionStorage.setItem("googleLoginRole", role);

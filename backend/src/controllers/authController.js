@@ -374,11 +374,12 @@ exports.googleAuth = async (req, res) => {
     }
 
     const { uid, email, name } = req.user;
+    const requestedRole = req.body?.role || req.query?.role || req.get('x-auth-role');
     const normalizedEmail = String(email || '').trim().toLowerCase();
-    const normalizedRole = String(req.body?.role || 'patient').trim().toLowerCase();
+    const normalizedRole = String(requestedRole || '').trim().toLowerCase();
 
     if (!['patient', 'doctor'].includes(normalizedRole)) {
-      return res.status(400).json({ message: "Role must be either patient or doctor" });
+      return res.status(400).json({ message: "Please choose Patient Login or Doctor Login before using Google sign-in." });
     }
 
     if (normalizedRole === 'doctor') {
@@ -415,6 +416,15 @@ exports.googleAuth = async (req, res) => {
     // 2️⃣ If not found, try by email
     if (!user) {
       user = await User.findOne({ email: normalizedEmail });
+    }
+
+    if (!user) {
+      const doctorWithEmail = await Doctor.findOne({ email: normalizedEmail });
+      if (doctorWithEmail) {
+        return res.status(409).json({
+          message: "This Google email belongs to a doctor account. Please choose Doctor Login.",
+        });
+      }
     }
 
     // 3️⃣ Create user if not exists
