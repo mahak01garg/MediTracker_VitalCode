@@ -7,7 +7,6 @@ import Card from '../common/Card';
 import { GiPill } from 'react-icons/gi';
 import { 
     FiClock, 
-    FiCalendar,
     FiEdit2,
     FiPlus,
     FiTrash2,
@@ -278,10 +277,10 @@ const MedicationForm = ({ isEditing = false }) => {
                     {isEditing ? <FiEdit2 className="w-6 h-6 text-white" /> : <FiPlus className="w-6 h-6 text-white" />}
                 </div>
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                         {isEditing ? 'Edit Medication' : 'Add New Medication'}
                     </h1>
-                    <p className="text-gray-600">
+                    <p className="text-gray-600 dark:text-gray-300">
                         {isEditing ? 'Update your medication details and schedule' : 'Add a new medication to your tracking list'}
                     </p>
                 </div>
@@ -293,7 +292,7 @@ const MedicationForm = ({ isEditing = false }) => {
                 <form onSubmit={handleSubmit} className="space-y-8">
                     {/* Basic Information - Same as before */}
                     <div>
-                        <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
                             <GiPill className="w-5 h-5 mr-2 text-blue-600" /> Basic Information
                         </h2>
 
@@ -319,12 +318,12 @@ const MedicationForm = ({ isEditing = false }) => {
                         </div>
 
                         <div className="mt-6">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Frequency</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Frequency</label>
                             <select 
                                 name="frequency" 
                                 value={formData.frequency} 
                                 onChange={handleInputChange} 
-                                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             >
                                 {frequencyOptions.map(option => (
                                     <option key={option.value} value={option.value}>
@@ -338,13 +337,13 @@ const MedicationForm = ({ isEditing = false }) => {
                     {/* UPDATED Schedule Section */}
                     <div>
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl font-bold text-gray-900 flex items-center">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
                                 <FiClock className="w-5 h-5 mr-2 text-blue-600" /> Schedule
                             </h2>
                             <button 
                                 type="button" 
                                 onClick={addSchedule} 
-                                className="flex items-center text-blue-600 hover:text-blue-800"
+                                className="flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-200"
                             >
                                 <FiPlus className="w-4 h-4 mr-1" /> Add Another Time
                             </button>
@@ -356,12 +355,12 @@ const MedicationForm = ({ isEditing = false }) => {
                             {formData.schedule.map((schedule, index) => (
                                 <Card key={index} variant="filled" className="relative">
                                     <div className="flex justify-between items-center mb-4">
-                                        <h3 className="font-bold text-gray-800">Schedule #{index + 1}</h3>
+                                        <h3 className="font-bold text-gray-800 dark:text-gray-100">Schedule #{index + 1}</h3>
                                         {formData.schedule.length > 1 && (
                                             <button 
                                                 type="button" 
                                                 onClick={() => removeSchedule(index)} 
-                                                className="text-red-600 hover:text-red-800 p-2"
+                                                className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 p-2"
                                             >
                                                 <FiTrash2 className="w-4 h-4" />
                                             </button>
@@ -371,15 +370,15 @@ const MedicationForm = ({ isEditing = false }) => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         {/* Time Input */}
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                                                 Time *
                                             </label>
                                             <input 
                                                 type="time" 
                                                 value={schedule.times ? schedule.times[0] : '08:00'}
                                                 onChange={(e) => handleScheduleChange(index, 'times', e.target.value)}
-                                                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                                    formErrors[`schedule-${index}-times`] ? 'border-red-500' : 'border-gray-300'
+                                                className={`w-full px-4 py-2.5 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                                                    formErrors[`schedule-${index}-times`] ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                                                 }`}
                                             />
                                             {formErrors[`schedule-${index}-times`] && (
@@ -392,13 +391,13 @@ const MedicationForm = ({ isEditing = false }) => {
                                         {/* Days Selection - UPDATED */}
                                         <div>
                                             <div className="flex justify-between items-center mb-2">
-                                                <label className="block text-sm font-medium text-gray-700">
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
                                                     Days *
                                                 </label>
                                                 <button 
                                                     type="button" 
                                                     onClick={() => handleDaySelection(index, 'everyday')}
-                                                    className="text-sm text-blue-600 hover:text-blue-800"
+                                                    className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-200"
                                                 >
                                                     {schedule.day === 'everyday' ? 'Clear All' : 'Select All Days'}
                                                 </button>
@@ -411,7 +410,7 @@ const MedicationForm = ({ isEditing = false }) => {
                                                     className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                                                         schedule.day === 'everyday' 
                                                             ? 'bg-blue-600 text-white' 
-                                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600'
                                                     }`}
                                                 >
                                                     Everyday
@@ -429,7 +428,7 @@ const MedicationForm = ({ isEditing = false }) => {
                                                             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                                                                 isSelected 
                                                                     ? 'bg-blue-600 text-white' 
-                                                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600'
                                                             }`}
                                                         >
                                                             {day.label}
@@ -437,7 +436,7 @@ const MedicationForm = ({ isEditing = false }) => {
                                                     );
                                                 })}
                                             </div>
-                                            <p className="text-sm text-gray-500 mt-2">
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                                                 Selected: {formatDayDisplay(schedule.day)}
                                             </p>
                                         </div>
@@ -449,11 +448,11 @@ const MedicationForm = ({ isEditing = false }) => {
 
                     {/* Additional Information - Same as before */}
                     <div>
-                        <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
                             <FiInfo className="w-5 h-5 mr-2 text-blue-600" /> Additional Information
                         </h2>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                                 Instructions (Optional)
                             </label>
                             <textarea 
@@ -462,7 +461,7 @@ const MedicationForm = ({ isEditing = false }) => {
                                 onChange={handleInputChange} 
                                 rows="4" 
                                 placeholder="e.g., Take with food" 
-                                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                             />
                         </div>
 
@@ -475,14 +474,14 @@ const MedicationForm = ({ isEditing = false }) => {
                                 onChange={handleInputChange} 
                                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" 
                             />
-                            <label htmlFor="isActive" className="ml-2 text-gray-700">
+                            <label htmlFor="isActive" className="ml-2 text-gray-700 dark:text-gray-200">
                                 This medication is currently active
                             </label>
                         </div>
                     </div>
 
                     {/* Form Actions - Same as before */}
-                    <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                    <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
                         <Button 
                             type="button" 
                             variant="outline" 
