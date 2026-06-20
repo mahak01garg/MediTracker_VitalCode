@@ -1,26 +1,18 @@
 const Doctor = require("../models/doctor.models.js");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const nodemailer = require("nodemailer");
 const { uploadToCloud } = require("../utils/cloudinary.js");
 const { sendOtp } = require("../utils/sendotp.js");
+const EmailService = require("../services/notification/EmailService.js");
+const logger = require("../utils/logger.js");
+
+const emailService = new EmailService();
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || process.env.JWT_SECRET;
 const ACCESS_TOKEN_EXPIRY = process.env.ACCESS_TOKEN_EXPIRY || process.env.JWT_EXPIRES_IN || "7d";
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || process.env.JWT_REFRESH_SECRET;
 const REFRESH_TOKEN_EXPIRY = process.env.REFRESH_TOKEN_EXPIRY || process.env.JWT_REFRESH_EXPIRES_IN || "30d";
 
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
-
-const emailUser = process.env.EMAIL_USER || process.env.SMTP_USER;
-const emailPass = process.env.EMAIL_PASS || process.env.EMAIL_PASSWORD || process.env.EMAIL_APP_PASSWORD || process.env.SMTP_PASS;
-
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: emailUser,
-    pass: emailPass,
-  },
-});
 
 const generateAccessRefreshTokens = async (doctorId) => {
   try {
@@ -75,14 +67,13 @@ const registerDoctor = async (req, res) => {
     const otp = generateOTP();
     const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
 
-    // Send OTP email
+    // Send OTP email with retry logic
     try {
-      await transporter.sendMail({
-        from: emailUser,
-        to: email,
-        subject: "Your OTP for Email Verification",
-        html: `<p>Your OTP is: <strong>${otp}</strong></p><p>This OTP is valid for 5 minutes.</p>`,
-      });
+      const otpResult = await sendOtp(email, otp, 3); // 3 retries
+      if (!otpResult.success) {
+        console.error('Email send error:', otpResult.error);
+        return res.status(500).json({ message: "Failed to send verification email. Please try again later." });
+      }
     } catch (emailErr) {
       console.error('Email send error:', emailErr);
       return res.status(500).json({ message: "Failed to send verification email: " + emailErr.message });
@@ -98,6 +89,12 @@ const registerDoctor = async (req, res) => {
       experience: parseInt(experience), // Convert to number
       degree: degree.trim(),
       age: parseInt(age), // Convert to number
+      gender,
+      avatar: avatarUrl,
+      verified: false,
+      otp,
+      otpExpires,
+    });
       gender,
       avatar: avatarUrl,
       verified: false,
