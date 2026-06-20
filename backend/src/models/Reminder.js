@@ -20,7 +20,7 @@ const reminderSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['reminder', 'missed', 'test', 'refill', 'followup'],
+    enum: ['reminder', 'missed', 'test', 'refill', 'followup','upcoming'],
     required: true
   },
   notifications: [{
