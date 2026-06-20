@@ -1,4 +1,4 @@
-const EmailService = require('./EmailService');
+const EmailService = require('../services/notification/EmailService');
 const logger = require('./logger');
 
 const emailService = new EmailService();
