@@ -54,6 +54,8 @@ EMAIL_FROM=noreply@meditracker.com
             const smtpPort = normalizeEnv(process.env.EMAIL_PORT || process.env.SMTP_PORT);
             const smtpSecure = normalizeEnv(process.env.EMAIL_SECURE || process.env.SMTP_SECURE);
             const smtpRequireTls = normalizeEnv(process.env.EMAIL_REQUIRE_TLS || process.env.SMTP_REQUIRE_TLS);
+            const emailService = normalizeEnv(process.env.EMAIL_SERVICE) || 'gmail';
+            const useCustomSmtp = parseBoolean(process.env.EMAIL_USE_SMTP, false);
             const port = parseNumber(smtpPort, 587);
             const secure = smtpSecure !== undefined
                 ? parseBoolean(smtpSecure, false)
@@ -77,8 +79,7 @@ EMAIL_FROM=noreply@meditracker.com
                 logger: process.env.NODE_ENV === 'development'
             };
 
-            // If custom SMTP settings are provided
-            if (smtpHost) {
+            if (useCustomSmtp && smtpHost) {
                 config.host = smtpHost;
                 config.port = port;
                 config.secure = secure;
@@ -86,7 +87,7 @@ EMAIL_FROM=noreply@meditracker.com
                     ? parseBoolean(smtpRequireTls, !secure)
                     : !secure;
             } else {
-                config.service = process.env.EMAIL_SERVICE || 'gmail';
+                config.service = emailService;
             }
 
             this.transporter = nodemailer.createTransport(config);
