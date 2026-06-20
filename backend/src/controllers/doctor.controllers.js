@@ -95,12 +95,7 @@ const registerDoctor = async (req, res) => {
       otp,
       otpExpires,
     });
-      gender,
-      avatar: avatarUrl,
-      verified: false,
-      otp,
-      otpExpires,
-    });
+    
 
     const userFromDB = await Doctor.findById(doctor._id).select("-password -refreshToken");
 
