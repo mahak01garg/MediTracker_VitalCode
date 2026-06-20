@@ -3,10 +3,8 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { uploadToCloud } = require("../utils/cloudinary.js");
 const { sendOtp } = require("../utils/sendotp.js");
-const EmailService = require("../services/notification/EmailService.js");
+const emailService = require("../services/notification/EmailService.js");
 const logger = require("../utils/logger.js");
-
-const emailService = new EmailService();
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || process.env.JWT_SECRET;
 const ACCESS_TOKEN_EXPIRY = process.env.ACCESS_TOKEN_EXPIRY || process.env.JWT_EXPIRES_IN || "7d";
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || process.env.JWT_REFRESH_SECRET;

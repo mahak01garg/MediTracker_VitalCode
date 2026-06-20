@@ -1,7 +1,5 @@
-const EmailService = require('../services/notification/EmailService');
+const emailService = require('../services/notification/EmailService');
 const logger = require('./logger');
-
-const emailService = new EmailService();
 
 const sendOtp = async (email, otp, retries = 3) => {
   for (let attempt = 1; attempt <= retries; attempt++) {
