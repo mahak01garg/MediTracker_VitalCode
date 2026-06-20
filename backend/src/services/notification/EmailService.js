@@ -18,6 +18,8 @@ class EmailService {
     initializeTransporter() {
         const EMAIL_MOCK = normalizeEnv(process.env.EMAIL_MOCK);
         const SENDGRID_API_KEY = normalizeEnv(process.env.SENDGRID_API_KEY);
+        const SENDGRID_FROM_EMAIL = normalizeEnv(process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_FROM || process.env.EMAIL_USER);
+        const SENDGRID_FROM_NAME = normalizeEnv(process.env.SENDGRID_FROM_NAME || process.env.EMAIL_FROM_NAME || 'MediTracker');
 
         if (EMAIL_MOCK === 'true') {
             console.log('📧 Email service running in MOCK mode - emails will be logged only');
@@ -35,11 +37,19 @@ SENDGRID_API_KEY must be a valid SendGrid API key.
             `);
             return;
         }
+        if (!SENDGRID_FROM_EMAIL) {
+            console.warn('⚠️  Email service disabled - Missing SENDGRID_FROM_EMAIL (verified sender identity required)');
+            console.log('ℹ️  Set the following env var to a verified sender address in SendGrid:');
+            console.log('\nSENDGRID_FROM_EMAIL=your_verified_email@example.com\n');
+            return;
+        }
 
         try {
             sgMail.setApiKey(SENDGRID_API_KEY);
             this.useSendGrid = true;
             this.sendGridApiKey = SENDGRID_API_KEY;
+            this.fromEmail = SENDGRID_FROM_EMAIL;
+            this.fromName = SENDGRID_FROM_NAME;
             this.isConfigured = true;
             console.log('✅ SendGrid email service configured successfully');
             console.log('ℹ️ Email provider selected: SendGrid');
@@ -96,9 +106,19 @@ SENDGRID_API_KEY must be a valid SendGrid API key.
                 throw new Error(errorMessage);
             }
 
-            const fromEmail = process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_FROM || process.env.EMAIL_USER;
-            const fromName = process.env.EMAIL_FROM_NAME || 'MediTracker';
+            const fromEmail = this.fromEmail || process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_FROM || process.env.EMAIL_USER;
+            const fromName = this.fromName || process.env.EMAIL_FROM_NAME || 'MediTracker';
 
+            if (!fromEmail) {
+                const errorMessage = 'Email "from" address is not configured. Set SENDGRID_FROM_EMAIL to a verified sender identity.';
+                console.error('❌ Failed to send email:', errorMessage);
+                return {
+                    success: false,
+                    error: true,
+                    code: 'MISSING_FROM_EMAIL',
+                    message: errorMessage
+                };
+            }
             console.log(`📤 Sending email to: ${to}`);
             const startTime = Date.now();
 
