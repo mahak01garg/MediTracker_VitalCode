@@ -1,16 +1,5 @@
-const nodemailer = require('nodemailer');
 const sgMail = require('@sendgrid/mail');
 const logger = require('../../utils/logger');
-
-const parseBoolean = (value, defaultValue = false) => {
-    if (value === undefined || value === null || value === '') return defaultValue;
-    return String(value).trim().toLowerCase() === 'true';
-};
-
-const parseNumber = (value, defaultValue) => {
-    const parsed = Number.parseInt(String(value || '').trim(), 10);
-    return Number.isNaN(parsed) ? defaultValue : parsed;
-};
 
 const normalizeEnv = (value) => {
     if (value === undefined || value === null) return undefined;
@@ -21,138 +10,43 @@ const normalizeEnv = (value) => {
 class EmailService {
     constructor() {
         this.isConfigured = false;
-        this.transporter = null;
         this.useSendGrid = false;
         this.sendGridApiKey = null;
         this.initializeTransporter();
     }
 
     initializeTransporter() {
-        const EMAIL_USER = normalizeEnv(process.env.EMAIL_USER || process.env.SMTP_USER);
         const EMAIL_MOCK = normalizeEnv(process.env.EMAIL_MOCK);
-        const emailPassword = normalizeEnv(process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS || process.env.EMAIL_APP_PASSWORD || process.env.SMTP_PASS);
         const SENDGRID_API_KEY = normalizeEnv(process.env.SENDGRID_API_KEY);
 
-        // Check if we should use mock mode
         if (EMAIL_MOCK === 'true') {
             console.log('📧 Email service running in MOCK mode - emails will be logged only');
             console.log('ℹ️  To enable real emails, set EMAIL_MOCK=false in .env');
             return;
         }
 
-        // Check if SendGrid should be used
-        if (SENDGRID_API_KEY) {
-            try {
-                sgMail.setApiKey(SENDGRID_API_KEY);
-                this.useSendGrid = true;
-                this.sendGridApiKey = SENDGRID_API_KEY;
-                this.isConfigured = true;
-                console.log('✅ SendGrid email service configured successfully');
-                console.log('ℹ️ Email provider selected: SendGrid');
-                return;
-            } catch (error) {
-                console.error('❌ SendGrid initialization error:', error.message);
-                this.useSendGrid = false;
-            }
-        }
-
-        // Check if email credentials exist for Gmail fallback
-        if (!EMAIL_USER || !emailPassword) {
-            console.warn('⚠️  Email service disabled - Missing credentials');
-            console.log('ℹ️  Configure one of these options:');
+        if (!SENDGRID_API_KEY) {
+            console.warn('⚠️  Email service disabled - Missing SENDGRID_API_KEY');
+            console.log('ℹ️  Set the following env vars for SendGrid:');
             console.log(`
-Option 1 - SendGrid (Recommended for Render.io):
 SENDGRID_API_KEY=SG.xxxxxxxxxxxxx
 SENDGRID_FROM_EMAIL=your_email@gmail.com
-
-Option 2 - Gmail SMTP:
-EMAIL_SERVICE=gmail
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASSWORD=your_app_password_here
-EMAIL_FROM=noreply@meditracker.com
+SENDGRID_API_KEY must be a valid SendGrid API key.
             `);
             return;
         }
 
-
         try {
-            const smtpHost = normalizeEnv(process.env.EMAIL_HOST || process.env.SMTP_HOST);
-            const smtpPort = normalizeEnv(process.env.EMAIL_PORT || process.env.SMTP_PORT);
-            const smtpSecure = normalizeEnv(process.env.EMAIL_SECURE || process.env.SMTP_SECURE);
-            const smtpRequireTls = normalizeEnv(process.env.EMAIL_REQUIRE_TLS || process.env.SMTP_REQUIRE_TLS);
-            const emailService = normalizeEnv(process.env.EMAIL_SERVICE) || 'gmail';
-            const useCustomSmtp = parseBoolean(process.env.EMAIL_USE_SMTP, false);
-            const port = parseNumber(smtpPort, 587);
-            const secure = smtpSecure !== undefined
-                ? parseBoolean(smtpSecure, false)
-                : port === 465;
-
-            // Create transporter with production settings
-            const config = {
-                auth: {
-                    user: EMAIL_USER,
-                    pass: emailPassword
-                },
-                // Connection pooling for better performance
-                pool: {
-                    maxConnections: 5,
-                    maxMessages: 100,
-                    rateDelta: 4000,
-                    rateLimit: 14 // 14 messages per rateDelta
-                },
-                // Increased timeouts for slower networks (like Render.io)
-                connectionTimeout: parseNumber(process.env.EMAIL_CONNECTION_TIMEOUT, 30000), // 30 seconds
-                greetingTimeout: parseNumber(process.env.EMAIL_GREETING_TIMEOUT, 30000), // 30 seconds
-                socketTimeout: parseNumber(process.env.EMAIL_SOCKET_TIMEOUT, 30000), // 30 seconds
-                tls: {
-                    rejectUnauthorized: false, // Allow self-signed certificates
-                    minVersion: 'TLSv1.2'
-                },
-                // Debugging
-                debug: process.env.NODE_ENV === 'development',
-                logger: process.env.NODE_ENV === 'development'
-            };
-
-            if (useCustomSmtp && smtpHost) {
-                config.host = smtpHost;
-                config.port = port;
-                config.secure = secure;
-                config.requireTLS = smtpRequireTls !== undefined
-                    ? parseBoolean(smtpRequireTls, !secure)
-                    : !secure;
-            } else {
-                config.service = emailService;
-            }
-
-            this.transporter = nodemailer.createTransport(config);
-            this.useSendGrid = false;
+            sgMail.setApiKey(SENDGRID_API_KEY);
+            this.useSendGrid = true;
+            this.sendGridApiKey = SENDGRID_API_KEY;
             this.isConfigured = true;
-            console.log('ℹ️ Email provider selected: Gmail SMTP');
-
-            const shouldVerifyOnStartup =
-                process.env.EMAIL_VERIFY_ON_STARTUP === 'true' ||
-                process.env.NODE_ENV === 'production';
-
-            if (shouldVerifyOnStartup) {
-                this.testConnection()
-                    .then(success => {
-                        this.isConfigured = success;
-                        if (success) {
-                            console.log('✅ Email service initialized and ready');
-                        }
-                    })
-                    .catch(error => {
-                        this.isConfigured = false;
-                        console.error('❌ Email service test failed:', error.message);
-                    });
-            }
-
+            console.log('✅ SendGrid email service configured successfully');
+            console.log('ℹ️ Email provider selected: SendGrid');
         } catch (error) {
-            console.error('❌ Email service initialization error:', error.message);
-            console.log('💡 Tips to fix:');
-            console.log('  1. For SendGrid: Use SENDGRID_API_KEY');
-            console.log('  2. For Gmail: Use App Password, not regular password');
-            console.log('  3. Check internet connection and firewall settings');
+            console.error('❌ SendGrid initialization error:', error.message);
+            this.useSendGrid = false;
+            this.isConfigured = false;
         }
     }
 
@@ -168,33 +62,8 @@ EMAIL_FROM=noreply@meditracker.com
             }
         }
 
-        if (!this.transporter) {
-            console.log('📧 Email service not configured');
-            return false;
-        }
-
-        try {
-            await this.transporter.verify();
-            console.log('✅ Email connection test passed');
-            return true;
-        } catch (error) {
-            console.error('❌ Email connection test failed:', error.message);
-            
-            // Provide specific troubleshooting tips
-            if (error.code === 'EAUTH') {
-                console.log('🔐 Authentication failed. Please check:');
-                console.log('  - Is your EMAIL_PASSWORD correct?');
-                console.log('  - For Gmail: Are you using an App Password?');
-                console.log('  - Is 2-Step Verification enabled?');
-            } else if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT') {
-                console.log('🌐 Connection failed. Please check:');
-                console.log('  - Is your internet working?');
-                console.log('  - Is port 587 or 465 blocked by firewall?');
-                console.log('  - Try using SendGrid instead (SENDGRID_API_KEY)');
-            }
-            
-            return false;
-        }
+        console.log('📧 Email service not configured');
+        return false;
     }
 
     async sendEmail(to, subject, html, text = '') {
@@ -221,92 +90,44 @@ EMAIL_FROM=noreply@meditracker.com
                 };
             }
 
-            // Check if service is configured
-            if (!this.isConfigured) {
-                const errorMessage = 'Email service is not configured. Check SendGrid API key or Gmail credentials.';
+            if (!this.isConfigured || !this.useSendGrid) {
+                const errorMessage = 'Email service is not configured. SendGrid is required. Set SENDGRID_API_KEY in environment variables.';
                 console.error('❌ Failed to send email:', errorMessage);
                 throw new Error(errorMessage);
             }
 
-            // Prepare from address
-            const fromEmail = process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_FROM || process.env.EMAIL_USER || process.env.SMTP_USER;
+            const fromEmail = process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_FROM || process.env.EMAIL_USER;
             const fromName = process.env.EMAIL_FROM_NAME || 'MediTracker';
 
             console.log(`📤 Sending email to: ${to}`);
             const startTime = Date.now();
 
-            let info;
-
-            // Use SendGrid if configured
-            if (this.useSendGrid) {
-                const toArray = Array.isArray(to) ? to : [to];
-                
-                const msg = {
-                    to: toArray,
-                    from: `${fromName} <${fromEmail}>`,
-                    subject: subject,
-                    text: text || this.htmlToText(html),
-                    html: html,
-                    replyTo: process.env.EMAIL_REPLY_TO || fromEmail,
-                    headers: {
-                        'X-Priority': '3',
-                        'X-Mailer': 'MediTracker v1.0'
-                    }
-                };
-
-                info = await sgMail.send(msg);
-                
-                const duration = Date.now() - startTime;
-                console.log(`✅ Email sent via SendGrid in ${duration}ms`);
-                console.log(`   Recipients: ${toArray.join(', ')}`);
-                console.log(`   Status: ${info[0].statusCode}`);
-                
-                logger.info(`Email sent to ${to} via SendGrid (${duration}ms)`);
-                
-                return {
-                    success: true,
-                    messageId: info[0].headers?.['x-message-id'] || `sg-${Date.now()}`,
-                    response: `SendGrid status ${info[0].statusCode}`,
-                    duration: duration
-                };
-            } 
-
-            // Fallback to Gmail/SMTP
-            if (!this.transporter) {
-                throw new Error('Email service transporter not initialized');
-            }
-
-            const mailOptions = {
-                from: `"${fromName}" <${fromEmail}>`,
-                to: Array.isArray(to) ? to.join(', ') : to,
+            const toArray = Array.isArray(to) ? to : [to];
+            const msg = {
+                to: toArray,
+                from: `${fromName} <${fromEmail}>`,
                 subject: subject,
                 text: text || this.htmlToText(html),
                 html: html,
+                replyTo: process.env.EMAIL_REPLY_TO || fromEmail,
                 headers: {
                     'X-Priority': '3',
-                    'X-Mailer': 'MediTracker v1.0',
-                    'List-Unsubscribe': `<${process.env.FRONTEND_URL}/unsubscribe>`,
-                    'Precedence': 'bulk'
+                    'X-Mailer': 'MediTracker v1.0'
                 }
             };
 
-            if (process.env.EMAIL_REPLY_TO) {
-                mailOptions.replyTo = process.env.EMAIL_REPLY_TO;
-            }
-
-            info = await this.transporter.sendMail(mailOptions);
-            
+            const info = await sgMail.send(msg);
             const duration = Date.now() - startTime;
-            console.log(`✅ Email sent via Gmail in ${duration}ms`);
-            console.log(`   Message ID: ${info.messageId}`);
-            console.log(`   Response: ${info.response.substring(0, 50)}...`);
-            
-            logger.info(`Email sent to ${to}: ${info.messageId} (${duration}ms)`);
-            
+            console.log(`✅ Email sent via SendGrid in ${duration}ms`);
+            console.log(`   Recipients: ${toArray.join(', ')}`);
+            console.log(`   Status: ${info[0].statusCode}`);
+
+            logger.info(`Email sent to ${to} via SendGrid (${duration}ms)`);
+
             return {
                 success: true,
-                messageId: info.messageId,
-                response: info.response,
+                messageId: info[0].headers?.['x-message-id'] || `sg-${Date.now()}`,
+                response: `SendGrid status ${info[0].statusCode}`,
                 duration: duration
             };
 
@@ -680,12 +501,6 @@ If you received this email unexpectedly, please ignore it.
     async sendWelcomeEmail(to, userName) {
 
         const subject = 'Welcome to MediTracker! 🎉';
-        console.log('EMAIL DEBUG:', {
-  mock: process.env.EMAIL_MOCK,
-  hasTransporter: !!this.transporter,
-  isConfigured: this.isConfigured,
-  user: process.env.EMAIL_USER
-});
         const html = `
             <!DOCTYPE html>
             <html>
@@ -801,38 +616,28 @@ Unsubscribe from marketing emails: ${process.env.FRONTEND_URL || 'https://your-a
     // New method: Quick diagnostic
     async diagnostic() {
         const config = {
-            hasUser: !!process.env.EMAIL_USER,
-            hasPassword: !!process.env.EMAIL_PASSWORD,
             hasSendGridKey: !!process.env.SENDGRID_API_KEY,
             hasSendGridFromEmail: !!process.env.SENDGRID_FROM_EMAIL,
             mockMode: process.env.EMAIL_MOCK === 'true',
-            envService: process.env.EMAIL_SERVICE || 'gmail',
-            selectedProvider: this.useSendGrid ? 'SendGrid' : 'Gmail SMTP',
+            selectedProvider: this.useSendGrid ? 'SendGrid' : 'None',
             frontendUrl: process.env.FRONTEND_URL || 'Not set',
-            transporterConfigured: !!this.transporter,
             isConfigured: this.isConfigured
         };
 
         console.log('\n📊 Email Service Diagnostic:');
         console.log('===========================');
-        console.log(`1. EMAIL_USER configured: ${config.hasUser ? '✅' : '❌'}`);
-        console.log(`2. EMAIL_PASSWORD configured: ${config.hasPassword ? '✅' : '❌'}`);
-        console.log(`3. SENDGRID_API_KEY configured: ${config.hasSendGridKey ? '✅' : '❌'}`);
-        console.log(`4. SENDGRID_FROM_EMAIL configured: ${config.hasSendGridFromEmail ? '✅' : '❌'}`);
-        console.log(`5. Mock mode: ${config.mockMode ? '✅ ON' : '❌ OFF'}`);
-        console.log(`6. EMAIL_SERVICE env value: ${config.envService}`);
-        console.log(`7. Selected provider: ${config.selectedProvider}`);
-        console.log(`8. Transporter: ${config.transporterConfigured ? '✅ Ready' : '❌ Not ready'}`);
-        console.log(`9. Service configured: ${config.isConfigured ? '✅ Yes' : '❌ No'}`);
-        console.log(`10. FRONTEND_URL: ${config.frontendUrl}`);
+        console.log(`1. SENDGRID_API_KEY configured: ${config.hasSendGridKey ? '✅' : '❌'}`);
+        console.log(`2. SENDGRID_FROM_EMAIL configured: ${config.hasSendGridFromEmail ? '✅' : '❌'}`);
+        console.log(`3. Mock mode: ${config.mockMode ? '✅ ON' : '❌ OFF'}`);
+        console.log(`4. Selected provider: ${config.selectedProvider}`);
+        console.log(`5. Service configured: ${config.isConfigured ? '✅ Yes' : '❌ No'}`);
+        console.log(`6. FRONTEND_URL: ${config.frontendUrl}`);
         
-        if (!config.hasUser || !config.hasPassword) {
+        if (!config.hasSendGridKey) {
             console.log('\n💡 Solution: Add to .env file:');
             console.log(`
-EMAIL_SERVICE=gmail
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASSWORD=your_app_password_here
-EMAIL_FROM=noreply@meditracker.com
+SENDGRID_API_KEY=SG.xxxxxxxxxxxxx
+SENDGRID_FROM_EMAIL=your_email@gmail.com
 EMAIL_MOCK=false
             `);
         }
