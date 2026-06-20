@@ -18,57 +18,83 @@ const allowStartupWithoutDb =
 DoseNotificationManager;
 app.use('/api/notifications', notificationRoutes);
 
-const connectMongo = async () => {
+const connectMongo = async (opts = {}) => {
+  const maxRetries = Number.parseInt(process.env.MONGODB_CONNECT_RETRIES || '5', 10);
+  const baseDelay = Number.parseInt(process.env.MONGODB_RETRY_DELAY_MS || '2000', 10);
   const connectOptions = {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 5000,
+    serverSelectionTimeoutMS: Number.parseInt(process.env.MONGODB_SERVER_SELECTION_TIMEOUT_MS || '20000', 10),
+    socketTimeoutMS: Number.parseInt(process.env.MONGODB_SOCKET_TIMEOUT_MS || '20000', 10),
   };
 
-  try {
-    await mongoose.connect(PRIMARY_MONGODB_URI, connectOptions);
-    logger.info('Connected to MongoDB (primary URI)');
-    return true;
-  } catch (primaryError) {
-    logger.error('Primary MongoDB connection failed:', primaryError);
-
-    if (PRIMARY_MONGODB_URI !== FALLBACK_MONGODB_URI) {
-      try {
-        logger.warn(`Retrying MongoDB connection with fallback URI: ${FALLBACK_MONGODB_URI}`);
-        await mongoose.connect(FALLBACK_MONGODB_URI, connectOptions);
-        logger.info('Connected to MongoDB (fallback local URI)');
-        return true;
-      } catch (fallbackError) {
-        logger.error('Fallback MongoDB connection failed:', fallbackError);
-      }
-    }
-
-    if (allowStartupWithoutDb) {
-      logger.warn('Starting server without MongoDB connection. Database-backed routes may fail until MongoDB is available.');
+  const tryConnect = async (uri) => {
+    try {
+      await mongoose.connect(uri, connectOptions);
+      logger.info(`Connected to MongoDB: ${uri.includes('@') ? uri.split('@')[1] : uri}`);
+      return true;
+    } catch (err) {
+      logger.warn(`MongoDB connect attempt failed for ${uri}: ${err && err.message ? err.message : err}`);
       return false;
     }
+  };
 
-    throw primaryError;
+  for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
+    logger.info(`MongoDB connection attempt ${attempt}/${maxRetries}`);
+    // try primary
+    if (PRIMARY_MONGODB_URI && await tryConnect(PRIMARY_MONGODB_URI)) return true;
+
+    // try fallback if provided and different
+    if (FALLBACK_MONGODB_URI && FALLBACK_MONGODB_URI !== PRIMARY_MONGODB_URI) {
+      if (await tryConnect(FALLBACK_MONGODB_URI)) return true;
+    }
+
+    // wait before next retry
+    const delay = baseDelay * attempt;
+    logger.info(`Waiting ${delay}ms before next MongoDB connect attempt`);
+    // eslint-disable-next-line no-await-in-loop
+    await new Promise((r) => setTimeout(r, delay));
   }
+
+  logger.error('All MongoDB connection attempts failed');
+
+  if (allowStartupWithoutDb) {
+    logger.warn('Starting server without MongoDB connection. Database-backed routes may fail until MongoDB is available.');
+    return false;
+  }
+
+  throw new Error('Unable to connect to MongoDB after retries');
 };
 
 const startServer = async () => {
+  // Start the HTTP server immediately so the platform (Render) can detect the port binding.
+  const server = app.listen(PORT, () => {
+    logger.info(`Server listening on port ${PORT}`);
+  });
+
+  // Initialize websockets regardless of DB status (they rely on server instance)
+  socketService.initialize(server);
+
   try {
     const isMongoConnected = await connectMongo();
 
-    const server = app.listen(PORT, () => {
-      logger.info(`Server running on port ${PORT}`);
-      if (!isMongoConnected) {
-        logger.warn('Server is running in limited mode because MongoDB is disconnected.');
-      } else {
-        CronJobManager.initialize();
-        MissedDoseDetector.init();
-      }
-      socketService.initialize(server);
-    });
+    if (!isMongoConnected) {
+      logger.warn('Server is running in limited mode because MongoDB is disconnected.');
+      return;
+    }
+
+    // Only initialize jobs when DB connection is healthy
+    CronJobManager.initialize();
+    await MissedDoseDetector.init();
+    logger.info('Background jobs initialized after MongoDB connection');
   } catch (error) {
-    logger.error('MongoDB connection error:', error);
-    process.exit(1);
+    logger.error('MongoDB connection error after server start:', error && error.message ? error.message : error);
+    // If DB is required, exit. Otherwise keep server running in limited mode.
+    if (!allowStartupWithoutDb) {
+      logger.error('Exiting because MongoDB is required but connection failed');
+      // Give logs a moment to flush
+      setTimeout(() => process.exit(1), 500);
+    }
   }
 };
 
