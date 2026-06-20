@@ -803,8 +803,11 @@ Unsubscribe from marketing emails: ${process.env.FRONTEND_URL || 'https://your-a
         const config = {
             hasUser: !!process.env.EMAIL_USER,
             hasPassword: !!process.env.EMAIL_PASSWORD,
+            hasSendGridKey: !!process.env.SENDGRID_API_KEY,
+            hasSendGridFromEmail: !!process.env.SENDGRID_FROM_EMAIL,
             mockMode: process.env.EMAIL_MOCK === 'true',
-            service: process.env.EMAIL_SERVICE || 'gmail',
+            envService: process.env.EMAIL_SERVICE || 'gmail',
+            selectedProvider: this.useSendGrid ? 'SendGrid' : 'Gmail SMTP',
             frontendUrl: process.env.FRONTEND_URL || 'Not set',
             transporterConfigured: !!this.transporter,
             isConfigured: this.isConfigured
@@ -814,11 +817,14 @@ Unsubscribe from marketing emails: ${process.env.FRONTEND_URL || 'https://your-a
         console.log('===========================');
         console.log(`1. EMAIL_USER configured: ${config.hasUser ? '✅' : '❌'}`);
         console.log(`2. EMAIL_PASSWORD configured: ${config.hasPassword ? '✅' : '❌'}`);
-        console.log(`3. Mock mode: ${config.mockMode ? '✅ ON' : '❌ OFF'}`);
-        console.log(`4. Service: ${config.service}`);
-        console.log(`5. Transporter: ${config.transporterConfigured ? '✅ Ready' : '❌ Not ready'}`);
-        console.log(`6. Service configured: ${config.isConfigured ? '✅ Yes' : '❌ No'}`);
-        console.log(`7. FRONTEND_URL: ${config.frontendUrl}`);
+        console.log(`3. SENDGRID_API_KEY configured: ${config.hasSendGridKey ? '✅' : '❌'}`);
+        console.log(`4. SENDGRID_FROM_EMAIL configured: ${config.hasSendGridFromEmail ? '✅' : '❌'}`);
+        console.log(`5. Mock mode: ${config.mockMode ? '✅ ON' : '❌ OFF'}`);
+        console.log(`6. EMAIL_SERVICE env value: ${config.envService}`);
+        console.log(`7. Selected provider: ${config.selectedProvider}`);
+        console.log(`8. Transporter: ${config.transporterConfigured ? '✅ Ready' : '❌ Not ready'}`);
+        console.log(`9. Service configured: ${config.isConfigured ? '✅ Yes' : '❌ No'}`);
+        console.log(`10. FRONTEND_URL: ${config.frontendUrl}`);
         
         if (!config.hasUser || !config.hasPassword) {
             console.log('\n💡 Solution: Add to .env file:');
