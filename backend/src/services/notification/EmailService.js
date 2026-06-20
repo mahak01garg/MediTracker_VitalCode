@@ -48,6 +48,7 @@ class EmailService {
                 this.sendGridApiKey = SENDGRID_API_KEY;
                 this.isConfigured = true;
                 console.log('✅ SendGrid email service configured successfully');
+                console.log('ℹ️ Email provider selected: SendGrid');
                 return;
             } catch (error) {
                 console.error('❌ SendGrid initialization error:', error.message);
@@ -126,6 +127,7 @@ EMAIL_FROM=noreply@meditracker.com
             this.transporter = nodemailer.createTransport(config);
             this.useSendGrid = false;
             this.isConfigured = true;
+            console.log('ℹ️ Email provider selected: Gmail SMTP');
 
             const shouldVerifyOnStartup =
                 process.env.EMAIL_VERIFY_ON_STARTUP === 'true' ||
