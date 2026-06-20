@@ -12,12 +12,20 @@ router.get('/diagnostic', async (req, res) => {
 router.post('/send-test', async (req, res) => {
   const { to } = req.body;
 
+  if (!to) {
+    return res.status(400).json({
+      success: false,
+      error: true,
+      message: 'Recipient email is required'
+    });
+  }
+
   const response = await emailService.sendTestEmail(to, {
     medicationName: 'Paracetamol',
     scheduledTime: '10:00 PM'
   });
 
-  res.json(response);
+  res.status(response.success ? 200 : 502).json(response);
 });
 
 module.exports = router;

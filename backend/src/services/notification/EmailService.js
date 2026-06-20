@@ -1,6 +1,22 @@
 const nodemailer = require('nodemailer');
 const logger = require('../../utils/logger');
 
+const parseBoolean = (value, defaultValue = false) => {
+    if (value === undefined || value === null || value === '') return defaultValue;
+    return String(value).trim().toLowerCase() === 'true';
+};
+
+const parseNumber = (value, defaultValue) => {
+    const parsed = Number.parseInt(String(value || '').trim(), 10);
+    return Number.isNaN(parsed) ? defaultValue : parsed;
+};
+
+const normalizeEnv = (value) => {
+    if (value === undefined || value === null) return undefined;
+    const normalized = String(value).trim();
+    return normalized || undefined;
+};
+
 class EmailService {
     constructor() {
         this.isConfigured = false;
@@ -9,9 +25,9 @@ class EmailService {
     }
 
     initializeTransporter() {
-        const EMAIL_USER = process.env.EMAIL_USER || process.env.SMTP_USER;
-        const EMAIL_MOCK = process.env.EMAIL_MOCK;
-        const emailPassword = process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS || process.env.EMAIL_APP_PASSWORD || process.env.SMTP_PASS;
+        const EMAIL_USER = normalizeEnv(process.env.EMAIL_USER || process.env.SMTP_USER);
+        const EMAIL_MOCK = normalizeEnv(process.env.EMAIL_MOCK);
+        const emailPassword = normalizeEnv(process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS || process.env.EMAIL_APP_PASSWORD || process.env.SMTP_PASS);
 
         // Check if we should use mock mode
         if (EMAIL_MOCK === 'true') {
@@ -34,22 +50,25 @@ EMAIL_FROM=noreply@meditracker.com
         }
 
         try {
+            const smtpHost = normalizeEnv(process.env.EMAIL_HOST || process.env.SMTP_HOST);
+            const smtpPort = normalizeEnv(process.env.EMAIL_PORT || process.env.SMTP_PORT);
+            const smtpSecure = normalizeEnv(process.env.EMAIL_SECURE || process.env.SMTP_SECURE);
+            const smtpRequireTls = normalizeEnv(process.env.EMAIL_REQUIRE_TLS || process.env.SMTP_REQUIRE_TLS);
+            const port = parseNumber(smtpPort, 587);
+            const secure = smtpSecure !== undefined
+                ? parseBoolean(smtpSecure, false)
+                : port === 465;
+
             // Create transporter with production settings
             const config = {
-                service: process.env.EMAIL_SERVICE || 'gmail',
                 auth: {
                     user: EMAIL_USER,
-                    pass: emailPassword.trim()
+                    pass: emailPassword
                 },
-                // Production optimizations
-                pool: true,
-                maxConnections: 5,
-                maxMessages: 100,
-                rateDelta: 20000, // 20 seconds
-                rateLimit: 10,    // 10 messages per rateDelta
-                // Connection settings
-                secure: process.env.EMAIL_SECURE !== 'false',
-                requireTLS: process.env.EMAIL_REQUIRE_TLS !== 'false',
+                pool: false,
+                connectionTimeout: parseNumber(process.env.EMAIL_CONNECTION_TIMEOUT, 10000),
+                greetingTimeout: parseNumber(process.env.EMAIL_GREETING_TIMEOUT, 10000),
+                socketTimeout: parseNumber(process.env.EMAIL_SOCKET_TIMEOUT, 15000),
                 tls: {
                     rejectUnauthorized: false // Allow self-signed certificates
                 },
@@ -58,17 +77,16 @@ EMAIL_FROM=noreply@meditracker.com
                 logger: process.env.NODE_ENV === 'development'
             };
 
-            const smtpHost = process.env.EMAIL_HOST || process.env.SMTP_HOST;
-            const smtpPort = process.env.EMAIL_PORT || process.env.SMTP_PORT;
-            const smtpSecure = process.env.EMAIL_SECURE || process.env.SMTP_SECURE;
-            const smtpRequireTls = process.env.EMAIL_REQUIRE_TLS || process.env.SMTP_REQUIRE_TLS;
-
             // If custom SMTP settings are provided
             if (smtpHost) {
                 config.host = smtpHost;
-                config.port = parseInt(smtpPort) || 587;
-                config.secure = smtpSecure === 'true';
-                config.requireTLS = smtpRequireTls !== 'false';
+                config.port = port;
+                config.secure = secure;
+                config.requireTLS = smtpRequireTls !== undefined
+                    ? parseBoolean(smtpRequireTls, !secure)
+                    : !secure;
+            } else {
+                config.service = process.env.EMAIL_SERVICE || 'gmail';
             }
 
             this.transporter = nodemailer.createTransport(config);

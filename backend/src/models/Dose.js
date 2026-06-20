@@ -11,7 +11,9 @@ const doseSchema = new mongoose.Schema({
         default: 'pending'
     },
     reminderSent: { type: Boolean, default: false },
+    pushReminderSent: { type: Boolean, default: false },
     missedAlertSent: { type: Boolean, default: false },
+    missedPushSent: { type: Boolean, default: false },
     notes: String,
     dosage: { type: String },
     createdAt: { type: Date, default: Date.now }

@@ -3,6 +3,9 @@
 const admin = require('../../config/firebase');
 const logger = require('../../utils/logger');
 const User = require('../../models/User');
+const Dose = require('../../models/Dose');
+
+const MAX_FCM_TOKENS_PER_USER = Number(process.env.MAX_FCM_TOKENS_PER_USER || 3);
 
 class PushNotificationService {
     
@@ -12,18 +15,21 @@ class PushNotificationService {
     const user = await User.findById(userId);
     if (!user.fcmTokens) user.fcmTokens = [];
 
-    if (!user.fcmTokens.includes(fcmToken)) {
-      user.fcmTokens.push(fcmToken);
-      await user.save();
-    }
+    user.fcmTokens = [
+      ...user.fcmTokens.filter(token => token !== fcmToken),
+      fcmToken
+    ].slice(-MAX_FCM_TOKENS_PER_USER);
+
+    await user.save();
 
     return true;
   }
   async sendNotification(userId, notification) {
     try {
       const user = await User.findById(userId);
+      const tokens = [...new Set(user?.fcmTokens || [])].slice(-MAX_FCM_TOKENS_PER_USER);
 
-      if (!user || !Array.isArray(user.fcmTokens) || user.fcmTokens.length === 0) {
+      if (!user || tokens.length === 0) {
         logger.info(`No FCM tokens for user ${userId}`);
         return {
           success: false,
@@ -44,7 +50,7 @@ class PushNotificationService {
       }
 
       const message = {
-        tokens: user.fcmTokens,
+        tokens,
         notification: {
           title: notification.title,
           body: notification.body
@@ -76,7 +82,7 @@ class PushNotificationService {
             errorCode === 'messaging/invalid-registration-token' ||
             errorCode === 'messaging/registration-token-not-registered'
           ) {
-            invalidTokens.push(user.fcmTokens[index]);
+            invalidTokens.push(tokens[index]);
           }
         }
       });
@@ -92,7 +98,7 @@ class PushNotificationService {
         ...response,
         success: response.successCount > 0,
         sent: response.successCount > 0,
-        deviceCount: user.fcmTokens.length
+        deviceCount: tokens.length
       };
 
     } catch (error) {
@@ -112,7 +118,37 @@ class PushNotificationService {
       data: { type: 'test' }
     });
   }
+  async reserveDosePush(doseId, fieldName) {
+    if (!doseId) return true;
+
+    const dose = await Dose.findOneAndUpdate(
+      { _id: doseId, [fieldName]: { $ne: true } },
+      { $set: { [fieldName]: true } },
+      { new: true }
+    );
+
+    if (!dose) {
+      logger.info(`Skipping duplicate push for dose ${doseId}`);
+      return false;
+    }
+
+    return true;
+  }
+
   async sendReminder(userId, reminderData) {
+    const reserved = await this.reserveDosePush(reminderData.doseId, 'pushReminderSent');
+    if (!reserved) {
+      return {
+        success: false,
+        sent: false,
+        successCount: 0,
+        failureCount: 0,
+        deviceCount: 0,
+        skipped: true,
+        message: 'Reminder push already sent for this dose'
+      };
+    }
+
     return this.sendNotification(userId, {
       title: 'Medication Reminder',
       body: `${reminderData.medicationName || 'Medication'}${reminderData.dosage ? ` (${reminderData.dosage})` : ''} is due at ${reminderData.scheduledTime || 'now'}.`,
@@ -125,6 +161,19 @@ class PushNotificationService {
   }
 
   async sendMissedDose(userId, alertData) {
+    const reserved = await this.reserveDosePush(alertData.doseId, 'missedPushSent');
+    if (!reserved) {
+      return {
+        success: false,
+        sent: false,
+        successCount: 0,
+        failureCount: 0,
+        deviceCount: 0,
+        skipped: true,
+        message: 'Missed dose push already sent for this dose'
+      };
+    }
+
     return this.sendNotification(userId, {
       title: 'Missed Dose Alert',
       body: `You missed ${alertData.medicationName || 'a medication'} scheduled at ${alertData.missedTime || 'earlier'}.`,
