@@ -5,8 +5,14 @@ const pushNotification = require('../notification/PushNotification');
 
 class ReminderScheduler {
     constructor() {
-        // No need to store thousands of jobs in memory
+        // Defer initialization until `init()` is called to avoid running DB-backed cron jobs
+        this._initialized = false;
+    }
+
+    init() {
+        if (this._initialized) return;
         this.initializeScheduler();
+        this._initialized = true;
     }
 
     initializeScheduler() {

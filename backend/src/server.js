@@ -7,6 +7,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const CronJobManager = require('./services/scheduler/cronJobs');
 const DoseNotificationManager = require('./services/notification/DoseNotificationManager');
 const MissedDoseDetector = require('./services/scheduler/MissedDoseDetector');
+const ReminderScheduler = require('./services/scheduler/ReminderScheduler');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 require('./config/firebase'); 
@@ -86,6 +87,14 @@ const startServer = async () => {
     // Only initialize jobs when DB connection is healthy
     CronJobManager.initialize();
     await MissedDoseDetector.init();
+    // Initialize ReminderScheduler after DB connect to avoid early DB queries
+    try {
+      ReminderScheduler.init();
+      logger.info('ReminderScheduler initialized after MongoDB connection');
+    } catch (rsErr) {
+      logger.warn('Failed to initialize ReminderScheduler:', rsErr && rsErr.message ? rsErr.message : rsErr);
+    }
+
     logger.info('Background jobs initialized after MongoDB connection');
   } catch (error) {
     logger.error('MongoDB connection error after server start:', error && error.message ? error.message : error);
